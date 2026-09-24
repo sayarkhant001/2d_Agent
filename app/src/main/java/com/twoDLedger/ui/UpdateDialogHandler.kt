@@ -1,0 +1,358 @@
+package com.twoDLedger.ui
+
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.twoDLedger.utils.GitHubUpdater
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+@Composable
+fun UpdateDialogHandler(owner: String, repo: String) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    var updateInfo by remember { mutableStateOf<GitHubUpdater.UpdateInfo?>(null) }
+
+    // Dialog states
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var showProgressDialog by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableIntStateOf(0) }
+    var downloadError by remember { mutableStateOf<String?>(null) }
+    var isInstalling by remember { mutableStateOf(false) }
+
+    val currentVersion = remember {
+        try {
+            val pInfo: PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            pInfo.versionName ?: "1.0.0"
+        } catch (e: PackageManager.NameNotFoundException) {
+            "1.0.0"
+        }
+    }
+
+    // ── Check for updates on launch ─────────────────────────────────────────
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            // 1. Check Cloudflare Worker / Telegram Bot Release Pipeline first
+            try {
+                val cfUpdate = com.twoDLedger.logic.AppUpdateChecker.checkForUpdate(context)
+                if (cfUpdate != null && cfUpdate.hasUpdate) {
+                    updateInfo = GitHubUpdater.UpdateInfo(
+                        version = cfUpdate.latestVersionName,
+                        releaseNotes = cfUpdate.releaseNotes,
+                        downloadUrl = cfUpdate.downloadUrl ?: cfUpdate.telegramBotUrl
+                    )
+                    showUpdateDialog = true
+                    return@launch
+                }
+            } catch (_: Exception) {}
+
+            // 2. Check GitHub Releases
+            val info = GitHubUpdater.checkForUpdates(owner, repo)
+            if (info != null) {
+                // Tag format: "v1.0.47" or "build-47"
+                // versionName format: "1.0.47" where 47 = GITHUB_RUN_NUMBER
+                // Extract the run number from the END of each version string
+                val fetchedRunNumber = info.version
+                    .trimStart('v')          // "v1.0.47" → "1.0.47"
+                    .split(".", "-")         // ["1","0","47"] or ["build","47"]
+                    .lastOrNull { it.all { c -> c.isDigit() } }
+                    ?.toIntOrNull() ?: 0
+
+                val currentRunNumber = currentVersion
+                    .trimStart('v')
+                    .split(".", "-")
+                    .lastOrNull { it.all { c -> c.isDigit() } }
+                    ?.toIntOrNull() ?: 0
+
+                android.util.Log.d("UpdateChecker",
+                    "tag=${info.version} fetchedRun=$fetchedRunNumber " +
+                    "currentVer=$currentVersion currentRun=$currentRunNumber")
+
+                if (fetchedRunNumber > currentRunNumber) {
+                    updateInfo = info
+                    showUpdateDialog = true
+                }
+            }
+        }
+    }
+
+    // ── Helper: start download + install ────────────────────────────────────
+    fun startDownloadAndInstall(info: GitHubUpdater.UpdateInfo) {
+        if (info.downloadUrl.startsWith("https://t.me/")) {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(info.downloadUrl)).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            try {
+                context.startActivity(intent)
+            } catch (_: Exception) {}
+            showUpdateDialog = false
+            return
+        }
+
+        showUpdateDialog = false
+        showProgressDialog = true
+        downloadProgress = 0
+        downloadError = null
+        isInstalling = false
+
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val apkFile = GitHubUpdater.downloadApkToCache(context, info.downloadUrl) { progress ->
+                    // onProgress is called on the IO thread — switch to Main to update state
+                    coroutineScope.launch(Dispatchers.Main) {
+                        downloadProgress = progress
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (apkFile != null) {
+                        downloadProgress = 100
+                        delay(300)
+                        isInstalling = true
+                    }
+                }
+
+                if (apkFile != null) {
+                    delay(200)
+                    withContext(Dispatchers.Main) {
+                        val ok = GitHubUpdater.installApkFromCache(context, apkFile)
+                        if (!ok && !GitHubUpdater.canInstallUnknownApps(context)) {
+                            showPermissionDialog = true
+                        }
+                    }
+                    delay(1200)
+                    withContext(Dispatchers.Main) {
+                        isInstalling = false
+                        showProgressDialog = false
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        downloadError = "Download မအောင်မြင်ပါ။ Internet စစ်ဆေးပါ။"
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    downloadError = "Error: ${e.localizedMessage ?: "မအောင်မြင်ပါ"}"
+                }
+            }
+        }
+    }
+
+    // ── Update Available Dialog ──────────────────────────────────────────────
+    if (showUpdateDialog && updateInfo != null) {
+        val info = updateInfo!!
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            icon = { Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = {
+                Text(
+                    "Update ဗားရှင်း အသစ် ရှိနေပါသည်",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Version: ${info.version}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    if (info.releaseNotes.isNotBlank()) {
+                        Text(
+                            info.releaseNotes.take(200).let { if (info.releaseNotes.length > 200) "$it…" else it },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "တိုက်ရိုက်ဒေါင်းလုဒ် မရရှိပါက Telegram Bot မှလည်း ဒေါင်းလုဒ် ရယူနိုင်ပါသည်။",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            startDownloadAndInstall(info)
+                        }
+                    ) {
+                        Text("တိုက်ရိုက် Update လုပ်မည်")
+                    }
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            val tgUrl = "https://t.me/threed_ledger_bot?start=download"
+                            try {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(tgUrl)).apply {
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                android.widget.Toast.makeText(context, "Telegram အက်ပ် ဖွင့်မရပါ", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Text("📱 Telegram Bot မှ ရယူမည်")
+                    }
+                    TextButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { showUpdateDialog = false }
+                    ) {
+                        Text("နောက်မှ")
+                    }
+                }
+            },
+            dismissButton = null
+        )
+    }
+
+    // ── "Install Unknown Apps" Permission Dialog ─────────────────────────────
+    if (showPermissionDialog && updateInfo != null) {
+        val info = updateInfo!!
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text("ခွင့်ပြုချက် လိုအပ်ပါသည်", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "\"Unknown Sources\" Install ခွင့်ပြုရန် Settings ဖွင့်မည်။\n\n" +
+                    "ဖွင့်ပြီးနောက် ပြန်လာ၍ Update ထပ်ကြိုးစားပါ။"
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    GitHubUpdater.openInstallUnknownAppsSettings(context)
+                    showPermissionDialog = false
+                    // Re-show update dialog after a delay so user can retry
+                    coroutineScope.launch {
+                        delay(2000)
+                        showUpdateDialog = true
+                    }
+                }) {
+                    Text("Settings ဖွင့်မည်")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionDialog = false }) {
+                    Text("မလုပ်တော့")
+                }
+            }
+        )
+    }
+
+    // ── Download Progress Dialog ─────────────────────────────────────────────
+    if (showProgressDialog) {
+        val animatedProgress by animateFloatAsState(
+            targetValue = downloadProgress / 100f,
+            label = "download_progress"
+        )
+
+        AlertDialog(
+            onDismissRequest = { /* Not dismissible during download */ },
+            title = {
+                Text(
+                    if (isInstalling) "Install လုပ်နေသည်…" else "Download လုပ်နေသည်…",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (downloadError != null) {
+                        // ── Error state ──
+                        Text(
+                            downloadError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    val tgUrl = "https://t.me/threed_ledger_bot?start=download"
+                                    try {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(tgUrl)).apply {
+                                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        android.widget.Toast.makeText(context, "Telegram အက်ပ် ဖွင့်မရပါ", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("📱 Telegram Bot မှ ဒေါင်းလုဒ်လုပ်မည်")
+                            }
+                            Button(
+                                onClick = {
+                                    showProgressDialog = false
+                                    downloadError = null
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("ပိတ်မည်")
+                            }
+                        }
+                    } else if (isInstalling) {
+                        // ── Installing spinner ──
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            "Installer ဖွင့်နေသည်…",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        // ── Download progress bar ──
+                        LinearProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        Text(
+                            "$downloadProgress%",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            "ကျေးဇူးပြု၍ စောင့်ပါ…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+}
+

@@ -1,0 +1,29 @@
+/**
+ * Cloudflare Worker for 2D Lottery & License Control Bot
+ * Bot Username: @twoDLedger2026bot
+ * HTTP Webhook & Fast SET Scraper
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "2d-scraper-worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-17",
+	"observability": {
+		"enabled": true
+	},
+	"upload_source_maps": true,
+
+	// Cron triggers for Myanmar 2D draw times:
+	// 12:00 PM MMT (05:30 UTC): cron around 05:28 - 05:35 UTC
+	// 04:30 PM MMT (10:00 UTC): cron around 09:58 - 10:05 UTC
+	// Background sync check every 6 hours
+	"triggers": {
+		"crons": ["0 */6 * * *"]
+	},
+
+	"vars": {
+		"FIREBASE_DB_URL": "https://dledger-1e687-default-rtdb.asia-southeast1.firebasedatabase.app",
+		"TELEGRAM_CHAT_ID": "5684146708",
+		"APP_NAME": "2D Ledger (2D စာရင်း)"
+	}
+}
