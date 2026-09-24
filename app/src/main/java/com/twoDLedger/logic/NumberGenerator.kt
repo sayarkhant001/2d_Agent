@@ -33,8 +33,8 @@ object NumberGenerator {
         .map { it.toString().padStart(3, '0') }
         .filter { s -> s.sumOf { it.digitToInt() } % 10 == d }
 
-    // ထွိုင် (Tri): Exact triple numbers
-    fun tri(): List<String> = (0..9).map { "$it$it$it" }
+    // အပူး (Doubles): Exact twin pairs (00, 11, ... 99)
+    fun aPuu(): List<String> = (0..9).map { "$it$it" }
 
     // အပါ (Include): Any number containing the digit
     fun include(d: Int): List<String> = (0..999)

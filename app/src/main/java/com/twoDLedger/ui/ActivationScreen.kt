@@ -116,7 +116,7 @@ fun ActivationScreen(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.app_logo),
-                        contentDescription = "3D စာရင်း Logo",
+                        contentDescription = "2D စာရင်း Logo",
                         modifier = Modifier
                             .size(64.dp)
                             .clip(RoundedCornerShape(16.dp))
@@ -349,7 +349,7 @@ fun ActivationScreen(
 
                     Image(
                         painter = painterResource(id = R.drawable.app_logo),
-                        contentDescription = "3D စာရင်း Logo",
+                        contentDescription = "2D စာရင်း Logo",
                         modifier = Modifier
                             .size(68.dp)
                             .clip(RoundedCornerShape(18.dp))
@@ -359,7 +359,7 @@ fun ActivationScreen(
                     Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        text = "3D စာရင်း အသုံးပြုခွင့် ဖွင့်ရန်",
+                        text = "2D စာရင်း အသုံးပြုခွင့် ဖွင့်ရန်",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -626,7 +626,7 @@ fun ActivationScreen(
 
                     OutlinedButton(
                         onClick = {
-                            val tgUrl = "https://t.me/threed_ledger_bot?start=trial"
+                            val tgUrl = "https://t.me/twoDLedger2026bot?start=trial"
                             try {
                                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(tgUrl)).apply {
                                     addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)

@@ -65,9 +65,9 @@ jobs:
         run: |
           RELEASE_TAG="v1.0.${{ github.run_number }}"
           FILE_NAME="${{ steps.apk.outputs.filename }}"
-          DOWNLOAD_URL="https://github.com/sayarkhant001/3d_Agent/releases/download/${RELEASE_TAG}/${FILE_NAME}"
+          DOWNLOAD_URL="https://github.com/sayarkhant001/2d_Agent/releases/download/${RELEASE_TAG}/${FILE_NAME}"
           echo "Syncing ${RELEASE_TAG} (${DOWNLOAD_URL}) to Cloudflare Worker..."
-          curl -s -X POST "https://3d-scraper-worker.khaingkhantkyaw001.workers.dev/api/app/publish" \
+          curl -s -X POST "https://2d-scraper-worker.khaingkhantkyaw001.workers.dev/api/app/publish" \
             -H "Content-Type: application/json" \
             -d '{
               "version_name": "'"${RELEASE_TAG}"'",

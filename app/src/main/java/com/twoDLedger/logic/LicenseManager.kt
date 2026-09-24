@@ -35,13 +35,10 @@ class LicenseManager(private val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("license_prefs", Context.MODE_PRIVATE)
 
     companion object {
-        private val SECRET_PART_1 = byteArrayOf(0x33, 0x64, 0x2d, 0x6c, 0x65, 0x64, 0x67, 0x65, 0x72) // "3d-ledger"
-        private val SECRET_PART_2 = byteArrayOf(0x2d, 0x6a, 0x77, 0x74, 0x2d, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74) // "-jwt-secret"
-        private val SECRET_PART_3 = byteArrayOf(0x2d, 0x32, 0x30, 0x32, 0x36) // "-2026"
+        private val SECRET_2D = "2d-ledger-jwt-secret-2026"
+        private val SECRET_3D = "3d-ledger-jwt-secret-2026"
 
-        fun getVerificationSecret(): String {
-            return String(SECRET_PART_1) + String(SECRET_PART_2) + String(SECRET_PART_3)
-        }
+        fun getVerificationSecret(): String = SECRET_2D
     }
 
     fun checkSecurityIntegrity(): Boolean {
@@ -77,7 +74,7 @@ class LicenseManager(private val context: Context) {
 
     fun assertLicenseActive() {
         if (!isActivated()) {
-            throw SecurityException("Access Denied: 3D Ledger license is invalid, expired, or tampered.")
+            throw SecurityException("Access Denied: 2D Ledger license is invalid, expired, or tampered.")
         }
     }
 
@@ -101,15 +98,24 @@ class LicenseManager(private val context: Context) {
             val parts = token.split(".")
             if (parts.size != 3) return false
 
-            // 1. Cryptographic HMAC-SHA256 Signature Verification
+            // 1. Cryptographic HMAC-SHA256 Signature Verification (supports 2D secret & fallback 3D)
             val headerAndPayload = "${parts[0]}.${parts[1]}".toByteArray(StandardCharsets.US_ASCII)
-            val mac = Mac.getInstance("HmacSHA256")
-            val key = SecretKeySpec(getVerificationSecret().toByteArray(StandardCharsets.UTF_8), "HmacSHA256")
-            mac.init(key)
-            val computedSigBytes = mac.doFinal(headerAndPayload)
-            val expectedSig = Base64.encodeToString(computedSigBytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).trim()
+            val secretsToTry = listOf(SECRET_2D, SECRET_3D)
+            var signatureValid = false
 
-            if (!MessageDigest.isEqual(expectedSig.toByteArray(StandardCharsets.US_ASCII), parts[2].trim().toByteArray(StandardCharsets.US_ASCII))) {
+            for (sec in secretsToTry) {
+                val mac = Mac.getInstance("HmacSHA256")
+                val key = SecretKeySpec(sec.toByteArray(StandardCharsets.UTF_8), "HmacSHA256")
+                mac.init(key)
+                val computedSigBytes = mac.doFinal(headerAndPayload)
+                val expectedSig = Base64.encodeToString(computedSigBytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).trim()
+                if (MessageDigest.isEqual(expectedSig.toByteArray(StandardCharsets.US_ASCII), parts[2].trim().toByteArray(StandardCharsets.US_ASCII))) {
+                    signatureValid = true
+                    break
+                }
+            }
+
+            if (!signatureValid) {
                 clearActivation("လုံခြုံရေး လက်မှတ် ချိုးဖောက်မှု စစ်ဆေးတွေ့ရှိရပါသည် (Token Signature Tampered)")
                 return false
             }
@@ -421,7 +427,7 @@ class LicenseManager(private val context: Context) {
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val req = okhttp3.Request.Builder()
                 .url("${NetworkClient.BASE_URL}/restore")
-                .header("User-Agent", "3DLedger-App/1.0")
+                .header("User-Agent", "2DLedger-App/1.0")
                 .post(jsonPayload.toRequestBody(mediaType))
                 .build()
             val resp = NetworkClient.okHttpClient.newCall(req).execute()

@@ -221,9 +221,12 @@ export default {
     }
 
     // License Activation endpoint
-    if (url.pathname === '/activate' || url.pathname === '/api/license/activate' || (url.pathname === '/' && request.method === 'POST' && request.headers.get('Content-Type')?.includes('application/json'))) {
-      const cloned = request.clone();
+    if (url.pathname === '/activate' || url.pathname === '/api/license/activate') {
+      return handleLicenseActivate(request, env);
+    }
+    if (url.pathname === '/' && request.method === 'POST') {
       try {
+        const cloned = request.clone();
         const body = await cloned.json() as any;
         if (body && body.cd_key) {
           return handleLicenseActivate(request, env);
@@ -862,6 +865,60 @@ export async function signLicenseJwt(payload: Record<string, unknown>, secret = 
   return `${header}.${encodedPayload}.${sig}`;
 }
 
+
+async function resolveCdKey(env: Env, token: string, inputKey: string): Promise<{ resolvedKey: string; keyData: any } | null> {
+  const cleanKey = inputKey.trim().toUpperCase();
+  if (!cleanKey) return null;
+
+  // 1. Direct lookup
+  const directRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cleanKey}.json`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (directRes.ok) {
+    const data = await directRes.json() as any;
+    if (data && typeof data === 'object' && data.status) {
+      return { resolvedKey: cleanKey, keyData: data };
+    }
+  }
+
+  // 2. Prefix or normalized match
+  try {
+    const shallowRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys.json?shallow=true`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (shallowRes.ok) {
+      const keysMap = await shallowRes.json() as Record<string, boolean> | null;
+      if (keysMap) {
+        const inputNorm = cleanKey.replace(/[^A-Z0-9]/g, '');
+        const allKeys = Object.keys(keysMap);
+        const matchedKey = allKeys.find(k => {
+          if (k === cleanKey) return true;
+          if (k.startsWith(cleanKey) || cleanKey.startsWith(k)) return true;
+          const kNorm = k.replace(/[^A-Z0-9]/g, '');
+          if (kNorm.startsWith(inputNorm) || inputNorm.startsWith(kNorm)) return true;
+          return false;
+        });
+
+        if (matchedKey) {
+          const matchRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${matchedKey}.json`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (matchRes.ok) {
+            const data = await matchRes.json() as any;
+            if (data && typeof data === 'object' && data.status) {
+              return { resolvedKey: matchedKey, keyData: data };
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('resolveCdKey error:', err);
+  }
+
+  return null;
+}
+
 export async function handleLicenseActivate(request: Request, env: Env): Promise<Response> {
   const corsHeaders = {
     'Content-Type': 'application/json',
@@ -872,33 +929,26 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
 
   try {
     const body = await request.json() as { cd_key?: string; device_fingerprint?: string; device_model?: string };
-    const cd_key = (body.cd_key || '').trim().toUpperCase();
+    const input_key = (body.cd_key || '').trim().toUpperCase();
     const device_fingerprint = (body.device_fingerprint || '').trim();
     const device_model = (body.device_model || 'Unknown Android Device').trim();
 
-    if (!cd_key || !device_fingerprint) {
+    if (!input_key || !device_fingerprint) {
       return new Response(JSON.stringify({ error: 'CD-Key နှင့် Device ID ထည့်သွင်းရန် လိုအပ်ပါသည်' }), {
         status: 400, headers: corsHeaders
       });
     }
 
     const token = await getFirebaseToken(env);
-    const keyRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!keyRes.ok) {
-      return new Response(JSON.stringify({ error: 'ဆာဗာ ချိတ်ဆက်မှု မအောင်မြင်ပါ' }), {
-        status: 500, headers: corsHeaders
-      });
-    }
-
-    const keyData = await keyRes.json() as any;
-    if (!keyData) {
+    const keyMatch = await resolveCdKey(env, token, input_key);
+    if (!keyMatch) {
       return new Response(JSON.stringify({ error: 'CD-Key မတွေ့ရှိပါ။ ပြန်လည်စစ်ဆေးပါ' }), {
         status: 404, headers: corsHeaders
       });
     }
+    const cd_key = keyMatch.resolvedKey;
+    const resolvedCdKey = keyMatch.resolvedKey;
+    const keyData = keyMatch.keyData;
 
     if (keyData.status === 'revoked') {
       return new Response(JSON.stringify({ error: 'ဤလိုင်စင်ကုတ်အား Admin မှ ပိတ်သိမ်းထားပါသည် (Revoked)' }), {
@@ -933,7 +983,7 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
           await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/devices/${device_fingerprint}.json`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ active_cd_key: cd_key, updated_at: Date.now() })
+            body: JSON.stringify({ active_cd_key: resolvedCdKey, updated_at: Date.now() })
           });
         } catch (_) {}
         return new Response(JSON.stringify({
@@ -966,7 +1016,7 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
           migration_count: (keyData.migration_count || 0) + 1
         };
 
-        await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
+        await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${resolvedCdKey}.json`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(migrationUpdates)
@@ -1033,7 +1083,7 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
 
       const isChangeable = keyData.device_changeable ?? (keyData.duration === 365 || keyData.plan_id === 'one_year');
 
-      await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
+      await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${resolvedCdKey}.json`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1051,12 +1101,12 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
         await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/devices/${device_fingerprint}.json`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ active_cd_key: cd_key, updated_at: now })
+          body: JSON.stringify({ active_cd_key: resolvedCdKey, updated_at: now })
         });
       } catch (_) {}
 
       const jwtPayload: Record<string, unknown> = {
-        cd_key,
+        cd_key: resolvedCdKey,
         device_fingerprint,
         iat: Math.floor(now / 1000),
         exp: expSec
@@ -1093,7 +1143,7 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
       }), { headers: corsHeaders });
     } else {
       // Manual Telegram Approval mode: Mark pending and notify Admin with inline buttons!
-      await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
+      await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${resolvedCdKey}.json`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1164,7 +1214,7 @@ export async function handleLicenseCheckStatus(request: Request, env: Env): Prom
     const device_fingerprint = (body.device_fingerprint || '').trim();
 
     const token = await getFirebaseToken(env);
-    const keyRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
+    const keyRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${resolvedCdKey}.json`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -1183,7 +1233,7 @@ export async function handleLicenseCheckStatus(request: Request, env: Env): Prom
         expSec = Math.floor(keyData.expires_at / 1000);
       }
       const jwtPayload: Record<string, unknown> = {
-        cd_key,
+        cd_key: resolvedCdKey,
         device_fingerprint,
         iat: Math.floor(Date.now() / 1000),
         exp: expSec
@@ -1225,20 +1275,18 @@ export async function handleLicenseVerify(request: Request, env: Env): Promise<R
 
   try {
     const body = await request.json() as { cd_key?: string; device_fingerprint?: string };
-    const cd_key = (body.cd_key || '').trim().toUpperCase();
+    const input_key = (body.cd_key || '').trim().toUpperCase();
     const device_fingerprint = (body.device_fingerprint || '').trim();
 
     const token = await getFirebaseToken(env);
-    const keyRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (!keyRes.ok) {
+    const keyMatch = await resolveCdKey(env, token, input_key);
+    if (!keyMatch) {
       return new Response(JSON.stringify({ valid: false, reason: 'not_found' }), { headers: corsHeaders });
     }
-
-    const keyData = await keyRes.json() as any;
-    if (!keyData || keyData.status === 'revoked') {
+    const cd_key = keyMatch.resolvedKey;
+    const resolvedCdKey = keyMatch.resolvedKey;
+    const keyData = keyMatch.keyData;
+    if (keyData.status === 'revoked') {
       return new Response(JSON.stringify({
         valid: false,
         reason: 'revoked',
@@ -1326,7 +1374,7 @@ export async function handleLicenseRestore(request: Request, env: Env): Promise<
 
     if (cd_key) {
       try {
-        const keyRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${cd_key}.json`, {
+        const keyRes = await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${resolvedCdKey}.json`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (keyRes.ok) {

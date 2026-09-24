@@ -10,7 +10,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
-    const val BASE_URL = "https://3d-scraper-worker.khaingkhantkyaw001.workers.dev"
+    const val BASE_URL = "https://2d-scraper-worker.khaingkhantkyaw001.workers.dev"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE

@@ -350,13 +350,27 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // ── Tactile Batch Stepper Controller Card ─────────────────────
+                // ── 2D Weekday & Fast Recheck / Calculation Header Card ─────────
+                val myanmarDayOfWeek = remember {
+                    val cal = java.util.Calendar.getInstance()
+                    when (cal.get(java.util.Calendar.DAY_OF_WEEK)) {
+                        java.util.Calendar.MONDAY -> "တနင်္လာနေ့"
+                        java.util.Calendar.TUESDAY -> "အင်္ဂါနေ့"
+                        java.util.Calendar.WEDNESDAY -> "ဗုဒ္ဓဟူးနေ့"
+                        java.util.Calendar.THURSDAY -> "ကြာသပတေးနေ့"
+                        java.util.Calendar.FRIDAY -> "သောကြာနေ့"
+                        java.util.Calendar.SATURDAY -> "စနေနေ့ (ပိတ်ရက်)"
+                        java.util.Calendar.SUNDAY -> "တနင်္ဂနွေနေ့ (ပိတ်ရက်)"
+                        else -> "ရုံးဖွင့်ရက်"
+                    }
+                }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(4.dp, RoundedCornerShape(20.dp)),
+                        .shadow(3.dp, RoundedCornerShape(18.dp)),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(18.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                 ) {
                     Row(
@@ -366,95 +380,57 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(modifier = Modifier.weight(1f, fill = false)) {
-                            Text(
-                                text = "အကြိမ်",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = rDimens.responsiveSp(16f),
-                                maxLines = 1
-                            )
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = myanmarDayOfWeek,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Black,
+                                    color = CobaltPrimary,
+                                    fontSize = 16.sp
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (currentSession == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE)
+                                ) {
+                                    Text(
+                                        text = if (currentSession == "12:00 PM") "နေ့လယ်ပိုင်း စာရင်း" else "ညနေပိုင်း စာရင်း",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = if (currentSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "လက်ရှိ အသုံးပြုနေသော အကြိမ်",
+                                text = "ရုံးဖွင့်ရက် (တနင်္လာ - သောကြာ) ၂ ကြိမ် စာရင်းတွက်ချက်မှု",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = rDimens.responsiveSp(11f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                fontSize = 11.sp
                             )
                         }
 
-                        // Stepper buttons + Input
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    if (currentBatch > 1) viewModel.currentBatch.value = currentBatch - 1
-                                },
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                        // Fast Recheck Action Button
+                        Surface(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onNavigateToLedger()
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            color = CobaltLight,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                             ) {
-                                Icon(
-                                    Icons.Default.Remove,
-                                    contentDescription = "Decrease",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-
-                            var batchText by remember { mutableStateOf(currentBatch.toString()) }
-                            LaunchedEffect(currentBatch) {
-                                batchText = currentBatch.toString()
-                            }
-
-                            OutlinedTextField(
-                                value = batchText,
-                                onValueChange = { newText ->
-                                    batchText = newText
-                                    newText.toIntOrNull()?.let { num ->
-                                        if (num in 1..1000) viewModel.currentBatch.value = num
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier
-                                    .width(76.dp)
-                                    .padding(horizontal = 6.dp),
-                                singleLine = true,
-                                textStyle = LocalTextStyle.current.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 18.sp,
-                                    textAlign = TextAlign.Center,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = MaterialTheme.colorScheme.primary
-                                ),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-
-                            IconButton(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    if (currentBatch < 999) viewModel.currentBatch.value = currentBatch + 1
-                                },
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = "Increase",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
+                                Text(
+                                    text = "📊 ပြန်စစ်",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = CobaltPrimary
                                 )
                             }
                         }
@@ -481,8 +457,8 @@ fun HomeScreen(
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(
-                                        Color(0xFF046A4E),
-                                        Color(0xFF065F46)
+                                        Color(0xFF1D4ED8),
+                                        Color(0xFF2563EB)
                                     )
                                 )
                             )
