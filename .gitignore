@@ -15,7 +15,6 @@
 .cxx
 local.properties
 .env
-debug.keystore
 
 # Firebase secrets - NEVER commit these
 *firebase-adminsdk*.json

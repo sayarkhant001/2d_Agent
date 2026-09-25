@@ -30,6 +30,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
+      - name: Ensure Signing Keystore Exists
+        run: |
+          mkdir -p app
+          if [ ! -f app/debug.keystore ]; then
+            echo "Generating fallback debug keystore for CI release..."
+            keytool -genkey -v -keystore app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
       - name: Build Hardened Release APK
         run: ./gradlew assembleRelease --no-daemon --no-configuration-cache --stacktrace
 
