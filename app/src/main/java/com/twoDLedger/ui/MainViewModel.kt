@@ -63,32 +63,82 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
     val winningHistory = repository.winningHistory
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    fun deleteVoucher(voucherId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteVoucher(voucherId)
+        }
+    }
+
     fun setSession(session: String) {
         currentSession.value = session
         prefs.edit().putString("currentSession", session).apply()
         loadWinningNumber()
     }
 
+    private var livePollingJob: kotlinx.coroutines.Job? = null
+
+    fun startLivePolling() {
+        if (livePollingJob?.isActive == true) return
+        livePollingJob = viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                try {
+                    fetchLive2DDirect()
+                } catch (_: Exception) {}
+
+                // Priority timing: fast polling around 12:00 PM and 4:30 PM draw intervals
+                val cal = Calendar.getInstance()
+                val hour = cal.get(Calendar.HOUR_OF_DAY)
+                val min = cal.get(Calendar.MINUTE)
+                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                val isWeekday = dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY
+
+                val isPeakTime = isWeekday && (
+                    (hour == 11 && min >= 57) || (hour == 12 && min <= 5) ||
+                    (hour == 16 && min in 27..35)
+                )
+                val isMarketHours = isWeekday && hour in 9..17
+                val delayMs = when {
+                    isPeakTime -> 3_000L      // 3 seconds exact & fastest fetching during results draw
+                    isMarketHours -> 15_000L  // 15 seconds during normal trading hours
+                    else -> 60_000L           // 1 minute outside market hours
+                }
+                kotlinx.coroutines.delay(delayMs)
+            }
+        }
+    }
+
+    private suspend fun fetchLive2DDirect() {
+        val resp = com.twoDLedger.network.TwoDApiClient.getLive()
+        live2DData.value = resp.live
+        resp.result.forEach { item ->
+            when {
+                item.openTime.startsWith("09") || item.openTime.startsWith("11") -> {
+                    if (item.twod.isNotBlank() && item.twod != "--") indicator900.value = item.twod
+                }
+                item.openTime.startsWith("12") -> {
+                    if (item.twod.isNotBlank() && item.twod != "--") {
+                        winningNumber1200.value = item.twod
+                        saveWinningNumber(item.twod, "12:00 PM")
+                    }
+                }
+                item.openTime.startsWith("14") || item.openTime.startsWith("15") -> {
+                    if (item.twod.isNotBlank() && item.twod != "--") indicator1400.value = item.twod
+                }
+                item.openTime.startsWith("16") -> {
+                    if (item.twod.isNotBlank() && item.twod != "--") {
+                        winningNumber1630.value = item.twod
+                        saveWinningNumber(item.twod, "4:30 PM")
+                    }
+                }
+            }
+        }
+    }
+
     fun fetchLive2D() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 isFetchingLive.value = true
-                val resp = com.twoDLedger.network.TwoDApiClient.getLive()
-                live2DData.value = resp.live
-                resp.result.forEach { item ->
-                    when (item.openTime) {
-                        "09:30:00", "11:00:00" -> if (item.twod.isNotBlank() && item.twod != "--") indicator900.value = item.twod
-                        "12:00:00", "12:01:00" -> if (item.twod.isNotBlank() && item.twod != "--") {
-                            winningNumber1200.value = item.twod
-                            saveWinningNumber(item.twod, "12:00 PM")
-                        }
-                        "14:00:00", "15:00:00" -> if (item.twod.isNotBlank() && item.twod != "--") indicator1400.value = item.twod
-                        "16:30:00" -> if (item.twod.isNotBlank() && item.twod != "--") {
-                            winningNumber1630.value = item.twod
-                            saveWinningNumber(item.twod, "4:30 PM")
-                        }
-                    }
-                }
+                fetchLive2DDirect()
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -153,6 +203,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
     init {
         loadWinningNumber()
         brakeLimit.value = prefs.getInt("brakeLimit", 3000)
+        startLivePolling()
         viewModelScope.launch {
             currentBatch.collect { batch ->
                 prefs.edit().putInt("currentBatch", batch).apply()
@@ -175,34 +226,59 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         } catch (_: Exception) {}
     }
 
-        fun saveWinningNumber(number: String, session: String = currentSession.value, batch: Int = currentBatch.value) {
+    fun saveWinningNumber(number: String, session: String = currentSession.value, batch: Int = currentBatch.value) {
+        val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
         if (session == "12:00 PM") {
             winningNumber1200.value = number
-            prefs.edit().putString("winning1200_$batch", number).apply()
+            prefs.edit().putString("winning1200_$today", number).putString("winning1200", number).apply()
         } else {
             winningNumber1630.value = number
-            prefs.edit().putString("winning1630_$batch", number).apply()
+            prefs.edit().putString("winning1630_$today", number).putString("winning1630", number).apply()
         }
-        if (batch == currentBatch.value) {
+        if (session == currentSession.value) {
             winningNumber.value = number
         }
         prefs.edit().putString("winningNumber_$batch", number).apply()
     }
 
-    fun clearWinningNumber(batch: Int = currentBatch.value) {
-        if (batch == currentBatch.value) {
+    fun clearWinningNumber(session: String = currentSession.value, batch: Int = currentBatch.value) {
+        val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        if (session == "12:00 PM") {
+            winningNumber1200.value = ""
+            prefs.edit().remove("winning1200_$today").remove("winning1200").apply()
+        } else {
+            winningNumber1630.value = ""
+            prefs.edit().remove("winning1630_$today").remove("winning1630").apply()
+        }
+        if (session == currentSession.value) {
             winningNumber.value = ""
         }
         prefs.edit().remove("winningNumber_$batch").apply()
     }
 
-    fun isBatchDeclared(batch: Int = currentBatch.value): Boolean {
-        val num = prefs.getString("winningNumber_$batch", "") ?: ""
+    fun clearWinningNumber(batch: Int) {
+        clearWinningNumber(currentSession.value, batch)
+    }
+
+    fun isSessionDeclared(session: String = currentSession.value): Boolean {
+        val num = if (session == "12:00 PM") winningNumber1200.value else winningNumber1630.value
         return num.length == 2
     }
 
+    fun isBatchDeclared(batch: Int = currentBatch.value): Boolean = isSessionDeclared()
+
     fun loadWinningNumber() {
-        winningNumber.value = prefs.getString("winningNumber_${currentBatch.value}", "") ?: ""
+        val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+        val saved1200 = prefs.getString("winning1200_$today", "") ?: prefs.getString("winning1200", "") ?: ""
+        val saved1630 = prefs.getString("winning1630_$today", "") ?: prefs.getString("winning1630", "") ?: ""
+        if (saved1200.isNotBlank() && winningNumber1200.value.isBlank()) winningNumber1200.value = saved1200
+        if (saved1630.isNotBlank() && winningNumber1630.value.isBlank()) winningNumber1630.value = saved1630
+
+        winningNumber.value = if (currentSession.value == "12:00 PM") {
+            winningNumber1200.value.ifBlank { saved1200 }
+        } else {
+            winningNumber1630.value.ifBlank { saved1630 }
+        }
     }
 
     fun saveBrakeLimit(value: Int) {
@@ -253,15 +329,19 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
     val ledgerExposures: StateFlow<List<LedgerExposure>> = kotlinx.coroutines.flow.combine(
         vouchersWithBets,
         allExportRecords,
-        currentBatch,
+        currentSession,
         brakeLimit
-    ) { vouchers, exports, batch, brake ->
-        val batchVouchers = vouchers.filter { it.voucher.batchNumber == batch }
-        val batchExports = exports.filter { it.record.batchNumber == batch }
+    ) { vouchers, exports, session, brake ->
+        val sessionVouchers = vouchers.filter {
+            it.voucher.session == session || (it.voucher.session.isBlank() && session == "12:00 PM")
+        }
+        val sessionExports = exports.filter {
+            it.record.session == session || (it.record.session.isBlank() && session == "12:00 PM")
+        }
 
         // Total bets per number (gross)
         val betMap = mutableMapOf<String, Int>()
-        batchVouchers.forEach { vb ->
+        sessionVouchers.forEach { vb ->
             vb.bets.forEach { bet ->
                 betMap[bet.number] = (betMap[bet.number] ?: 0) + bet.amount
             }
@@ -269,7 +349,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
 
         // All exported amounts per number (both overflow and under-brake exports)
         val exportMap = mutableMapOf<String, Int>()
-        batchExports.forEach { eb ->
+        sessionExports.forEach { eb ->
             eb.numbers.forEach { num ->
                 exportMap[num.number] = (exportMap[num.number] ?: 0) + num.amount
             }
@@ -277,7 +357,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
 
         // Overflow-specific exported amounts per number
         val overflowExportMap = mutableMapOf<String, Int>()
-        batchExports
+        sessionExports
             .filter { it.record.type.contains("Overflow", ignoreCase = true) || it.record.type.contains("ဘရိတ်ကျော်") || it.record.type.contains("တင်ကွက်") }
             .forEach { eb ->
                 eb.numbers.forEach { num ->
@@ -289,7 +369,6 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         betMap.forEach { (number, grossAmount) ->
             val exported = exportMap[number] ?: 0
             val netHeld = grossAmount - exported
-            // Remaining overflow = amount above brake that has NOT yet been exported to upper agent
             val alreadyExportedOverflow = overflowExportMap[number] ?: 0
             val rawOverflow = if (grossAmount > brake) grossAmount - brake else 0
             val overflow = maxOf(0, rawOverflow - alreadyExportedOverflow)
@@ -309,6 +388,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
             val totalAmount = toExport.sumOf { it.overflowAmount }
             val record = ExportRecord(
                 batchNumber = currentBatch.value,
+                session = currentSession.value,
                 type = "ဘရိတ်ကျော် တင်ကွက်",
                 totalAmount = totalAmount
             )

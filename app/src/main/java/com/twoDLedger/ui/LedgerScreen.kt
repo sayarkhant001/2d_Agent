@@ -27,23 +27,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twoDLedger.ui.theme.*
 
-// ── Number category helper ─────────────────────────────────────────────────────
+// ── 2D Number Category Helper ─────────────────────────────────────────────────
 private enum class NumCat(val label: String, val color: Color, val bgColor: Color) {
     EXACT("ဒဲ့ (ပေါက်)", WinExactRed, WinExactBg),
-    TUWT("တွတ်", WinPermGold, WinPermBg),
+    REVERSE("R (ပြန်)", WinPermGold, WinPermBg),
     NONE("", Color.Transparent, Color.Transparent)
 }
 
 private fun categorize(number: String, winning: String): NumCat {
-    if (winning.length != 3) return NumCat.NONE
+    if (winning.length != 2) return NumCat.NONE
     if (number == winning) return NumCat.EXACT
-    val allPerms = com.twoDLedger.logic.NumberGenerator.permutations(winning).toSet() - setOf(winning)
-    val winInt = winning.toIntOrNull() ?: return NumCat.NONE
-    val minus1 = String.format("%03d", if (winInt == 0) 999 else winInt - 1)
-    val plus1  = String.format("%03d", if (winInt == 999) 0 else winInt + 1)
-    val near   = setOf(minus1, plus1) - setOf(winning)
-    val tuwtSet = allPerms + near
-    if (number in tuwtSet) return NumCat.TUWT
+    val rev = com.twoDLedger.logic.TwoDNumberGenerator.reverse(winning)
+    if (rev.contains(number) && number != winning) return NumCat.REVERSE
     return NumCat.NONE
 }
 
@@ -70,32 +65,26 @@ fun LedgerScreen(
     val exactMult by viewModel.savedExactMult.collectAsStateWithLifecycle()
     val tuwtMult  by viewModel.savedPermMult.collectAsStateWithLifecycle()
 
-    // After mode — only active when WinnerScreen has declared a winning number
-    val isAfterMode = savedWinner.length == 3
+    // After mode — active when 2D winning number has been declared (2 digits)
+    val isAfterMode = savedWinner.length == 2
 
-    // After-mode rows: ONLY winning number and TUT numbers! Other numbers disappear!
+    // After-mode rows: winning 2D number and its reversal
     val relevantRows: List<Pair<LedgerExposure, NumCat>> =
         if (isAfterMode) {
             val exposureMap = allExposures.associateBy { it.number }
-            val allPerms = com.twoDLedger.logic.NumberGenerator.permutations(savedWinner).toSet() - setOf(savedWinner)
-            val winInt = savedWinner.toIntOrNull() ?: 0
-            val minus1 = String.format("%03d", if (winInt == 0) 999 else winInt - 1)
-            val plus1  = String.format("%03d", if (winInt == 999) 0 else winInt + 1)
-            val near   = setOf(minus1, plus1) - setOf(savedWinner)
-            val tuwtSet = allPerms + near
-
             val exactExp = exposureMap[savedWinner] ?: LedgerExposure(savedWinner, 0, 0, 0, 0)
             val exactRow = exactExp to NumCat.EXACT
 
-            val tuwtRows = tuwtSet.sorted().map { num ->
-                (exposureMap[num] ?: LedgerExposure(num, 0, 0, 0, 0)) to NumCat.TUWT
+            val revNums = com.twoDLedger.logic.TwoDNumberGenerator.reverse(savedWinner).filter { it != savedWinner }
+            val revRows = revNums.map { num ->
+                (exposureMap[num] ?: LedgerExposure(num, 0, 0, 0, 0)) to NumCat.REVERSE
             }
 
-            listOf(exactRow) + tuwtRows
+            listOf(exactRow) + revRows
         } else emptyList()
 
     val exactWonBets = relevantRows.filter { it.second == NumCat.EXACT }.sumOf { it.first.totalBetAmount }
-    val tuwtWonBets  = relevantRows.filter { it.second == NumCat.TUWT }.sumOf { it.first.totalBetAmount }
+    val tuwtWonBets  = relevantRows.filter { it.second == NumCat.REVERSE }.sumOf { it.first.totalBetAmount }
     val totalWonBets = exactWonBets + tuwtWonBets
 
     val exactPayout = exactWonBets * exactMult
@@ -153,25 +142,44 @@ fun LedgerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "အကြိမ် :",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = if (rDimens.isCompact) 12.sp else 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            "$currentBatch",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = if (rDimens.isCompact) 16.sp else 18.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
+                    val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Surface(
+                            onClick = { viewModel.setSession("12:00 PM") },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (currentSession == "12:00 PM") Color(0xFFFEF3C7) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (currentSession == "12:00 PM") Color(0xFFFDE68A) else Color.Transparent)
+                        ) {
+                            Text(
+                                "☀️ ၁၂:၀၀",
+                                fontSize = 11.5.sp,
+                                fontWeight = if (currentSession == "12:00 PM") FontWeight.ExtraBold else FontWeight.Medium,
+                                color = if (currentSession == "12:00 PM") Color(0xFF92400E) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                        Surface(
+                            onClick = { viewModel.setSession("4:30 PM") },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (currentSession == "4:30 PM") Color(0xFFDBEAFE) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (currentSession == "4:30 PM") Color(0xFF93C5FD) else Color.Transparent)
+                        ) {
+                            Text(
+                                "🌙 ၄:၃၀",
+                                fontSize = 11.5.sp,
+                                fontWeight = if (currentSession == "4:30 PM") FontWeight.ExtraBold else FontWeight.Medium,
+                                color = if (currentSession == "4:30 PM") Color(0xFF1E40AF) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
 
                     if (isAfterMode) {
                         val exactWonCount = relevantRows.count { it.second == NumCat.EXACT }
-                        val tuwtWonCount  = relevantRows.count { it.second == NumCat.TUWT }
+                        val revWonCount   = relevantRows.count { it.second == NumCat.REVERSE }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -196,13 +204,13 @@ fun LedgerScreen(
                             }
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (exactWonCount > 0 || tuwtWonCount > 0) EmeraldLight else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (exactWonCount > 0 || tuwtWonCount > 0) EmeraldMedium.copy(alpha = 0.35f) else Color.Transparent)
+                                color = if (exactWonCount > 0 || revWonCount > 0) EmeraldLight else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (exactWonCount > 0 || revWonCount > 0) EmeraldMedium.copy(alpha = 0.35f) else Color.Transparent)
                             ) {
                                 Text(
-                                    if (exactWonCount > 0 || tuwtWonCount > 0) "ဒဲ့ $exactWonCount | တွတ် $tuwtWonCount"
+                                    if (exactWonCount > 0 || revWonCount > 0) "ဒဲ့ $exactWonCount | R $revWonCount"
                                     else "ပေါက်သီး မရှိပါ",
-                                    color = if (exactWonCount > 0 || tuwtWonCount > 0) EmeraldDark else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (exactWonCount > 0 || revWonCount > 0) EmeraldDark else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
@@ -361,9 +369,9 @@ fun LedgerScreen(
                         itemsIndexed(relevantRows) { idx, (exposure, cat) ->
                             val isEven = idx % 2 == 0
                             val rowBg = when (cat) {
-                                NumCat.EXACT -> Color(0xFFFFF1F2) // Dominant rose highlight for exact win
-                                NumCat.TUWT  -> if (isEven) Color.White else Color(0xFFFFFBEB) // Alternating clean white and warm cream
-                                else         -> if (isEven) Color.White else Color(0xFFF8FAFC)
+                                NumCat.EXACT   -> Color(0xFFFFF1F2) // Dominant rose highlight for exact win
+                                NumCat.REVERSE -> if (isEven) Color.White else Color(0xFFFFFBEB) // Alternating clean white and warm cream
+                                else           -> if (isEven) Color.White else Color(0xFFF8FAFC)
                             }
                             Row(
                                 modifier = Modifier
@@ -421,7 +429,7 @@ fun LedgerScreen(
                                                 )
                                             }
                                         }
-                                        NumCat.TUWT -> {
+                                        NumCat.REVERSE -> {
                                             // Tut numbers with distinct high-contrast white container & warm amber border
                                             Surface(
                                                 shape = RoundedCornerShape(8.dp),

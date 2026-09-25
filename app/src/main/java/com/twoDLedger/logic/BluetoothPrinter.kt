@@ -193,20 +193,20 @@ object BluetoothPrinter {
         canvas.drawCircle(circleX, circleY, circleR - 6f, paint)
         paint.style = android.graphics.Paint.Style.FILL
 
-        // Batch number
+        // 2D Badge
         paint.color = Color.WHITE
-        paint.textSize = 40f
+        paint.textSize = 34f
         paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
         paint.textAlign = android.graphics.Paint.Align.CENTER
-        canvas.drawText("${data.batchNumber}", circleX, circleY + 14f, paint)
+        canvas.drawText("2D", circleX, circleY + 12f, paint)
 
-        // Title: "3D ဘောင်ချာ"
+        // Title: "2D ဘောင်ချာ"
         paint.color = Color.BLACK
         paint.textSize = 42f
         paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
         paint.textAlign = android.graphics.Paint.Align.LEFT
         val titleX = circleX + circleR + 14f
-        canvas.drawText("3D ဘောင်ချာ", titleX, circleY - 2f, paint)
+        canvas.drawText("2D ဘောင်ချာ", titleX, circleY - 2f, paint)
 
         // Subtitle with voucher number
         paint.textSize = 21f
@@ -351,6 +351,34 @@ object BluetoothPrinter {
         canvas.drawText("- - - ဖြတ်ရန် - - -", width / 2f, y + 4f, paint)
 
         return bitmap
+    }
+
+    suspend fun printVoucher(
+        context: Context,
+        voucherWithBets: com.twoDLedger.data.VoucherWithBets,
+        customerName: String,
+        footerText: String,
+        paperSize: String = "58mm"
+    ): Boolean {
+        return try {
+            val voucher = voucherWithBets.voucher
+            val bets = voucherWithBets.bets.map { it.number to it.amount }
+            val data = VoucherData(
+                batchNumber = 0,
+                voucherId = voucher.id,
+                date = voucher.date,
+                customerName = customerName,
+                remark = voucher.remark,
+                bets = bets,
+                totalAmount = voucher.totalAmount,
+                footerText = footerText
+            )
+            val bmp = createVoucherBitmap(data, paperSize)
+            printBitmap(bmp, paperSize)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 }
 

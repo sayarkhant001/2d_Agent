@@ -52,6 +52,7 @@ fun OverflowScreen(
 ) {
     val ledgerExposures by viewModel.ledgerExposures.collectAsStateWithLifecycle()
     val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
+    val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()
     val brakeLimit by viewModel.brakeLimit.collectAsStateWithLifecycle()
     val footerText by viewModel.voucherFooterText.collectAsStateWithLifecycle()
     val winningNumber by viewModel.winningNumber.collectAsStateWithLifecycle()
@@ -62,7 +63,7 @@ fun OverflowScreen(
     val batchWinningNumber = remember(currentBatch, winningNumber) { 
         viewModel.getWinningNumberForBatch(currentBatch) 
     }
-    val isWonDeclared = batchWinningNumber.length == 3
+    val isWonDeclared = batchWinningNumber.length == 2
     val (exactMult, permMult, nearMult) = remember(currentBatch) { 
         viewModel.getMultipliersForBatch(currentBatch) 
     }
@@ -91,21 +92,12 @@ fun OverflowScreen(
 
     // When winning number is declared: show winning exact number and tut numbers only
     val brakedWinRows = remember(batchWinningNumber, exposureMap, brakeLimit) {
-        if (batchWinningNumber.length != 3) return@remember emptyList<BrakedWinRow>()
-        val allPerms = NumberGenerator.permutations(batchWinningNumber).toSet()
-        val permsOnly = (allPerms - setOf(batchWinningNumber)).sorted()
-        val winInt = batchWinningNumber.toIntOrNull() ?: 0
-        val numMinus1 = String.format("%03d", if (winInt == 0) 999 else winInt - 1)
-        val numPlus1  = String.format("%03d", if (winInt == 999) 0 else winInt + 1)
-        val lastDigit = batchWinningNumber[2].digitToIntOrNull() ?: 0
-        val lastMinus1 = "${batchWinningNumber.substring(0, 2)}${(lastDigit + 9) % 10}"
-        val lastPlus1  = "${batchWinningNumber.substring(0, 2)}${(lastDigit + 1) % 10}"
-        val nearOnly = (setOf(numMinus1, numPlus1, lastMinus1, lastPlus1) - setOf(batchWinningNumber) - allPerms).sorted()
-        val tuwtNumbers = permsOnly + nearOnly
+        if (batchWinningNumber.length != 2) return@remember emptyList<BrakedWinRow>()
+        val revWinning = com.twoDLedger.logic.TwoDNumberGenerator.reverse(batchWinningNumber).filter { it != batchWinningNumber }
 
         val exactAmt = if (brakeLimit > 0) minOf(exposureMap[batchWinningNumber]?.totalBetAmount ?: 0, brakeLimit) else (exposureMap[batchWinningNumber]?.totalBetAmount ?: 0)
         listOf(BrakedWinRow(batchWinningNumber, isExact = true, amount = exactAmt)) +
-            tuwtNumbers.map { num ->
+            revWinning.map { num ->
                 val amt = if (brakeLimit > 0) minOf(exposureMap[num]?.totalBetAmount ?: 0, brakeLimit) else (exposureMap[num]?.totalBetAmount ?: 0)
                 BrakedWinRow(num, isExact = false, amount = amt)
             }
@@ -177,8 +169,8 @@ fun OverflowScreen(
         val voucherText = buildString {
             appendLine("      တင်ကွက် ဘောင်ချာ    ")
             appendLine(" ဘောင်ချာ : #${snapshot.voucherId}")
-            appendLine(" အကြိမ်   : ${snapshot.batch}")
-            appendLine(" အချိန်   : ${snapshot.timestamp}")
+            appendLine(" အချိန်   : $currentSession")
+            appendLine(" ရက်စွဲ   : ${snapshot.timestamp}")
             appendLine("------------------------")
             snapshot.items.forEachIndexed { idx, (num, amt) ->
                 appendLine(" ${idx + 1}. $num = $amt")
@@ -222,7 +214,7 @@ fun OverflowScreen(
                             .padding(8.dp)
                     ) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("အကြိမ် : ${snapshot.batch}", fontWeight = FontWeight.SemiBold)
+                            Text("အချိန် : $currentSession", fontWeight = FontWeight.SemiBold)
                             Text(snapshot.timestamp, style = MaterialTheme.typography.bodySmall)
                         }
                     }
@@ -457,7 +449,7 @@ fun OverflowScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "အကြိမ် : $currentBatch",
+                    if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀ စာရင်း" else "🌙 ၄:၃၀ စာရင်း",
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold

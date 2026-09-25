@@ -444,11 +444,18 @@ fun BettingScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "အကြိမ် $currentBatch",
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (currentSession == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE)
+                        ) {
+                            Text(
+                                text = if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (currentSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
 
                         Button(
                             onClick = { submitVoucher() },
@@ -575,54 +582,79 @@ fun BettingScreen(
 
                     Spacer(Modifier.height(8.dp))
 
-                    // Input Fields: Number & Amount
+                    // Tactile Dual Displays: Number & Amount
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedTextField(
-                            value = tempNumber,
-                            onValueChange = {
-                                if (it.length <= 2) tempNumber = it.filter { c -> c.isDigit() }
-                            },
-                            label = { Text("ဂဏန်း (2D)", fontSize = 11.sp) },
-                            placeholder = { Text("00-99", fontSize = 12.sp, color = TextMuted) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { focusedField = FocusField.NUMBER },
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryGold,
-                                unfocusedBorderColor = CardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            )
-                        )
+                        // Number Box
+                        Surface(
+                            onClick = { focusedField = FocusField.NUMBER },
+                            shape = RoundedCornerShape(12.dp),
+                            color = SlateDarkBackground,
+                            border = BorderStroke(
+                                if (focusedField == FocusField.NUMBER) 1.8.dp else 1.dp,
+                                if (focusedField == FocusField.NUMBER) PrimaryGold else CardBorder
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                Text(
+                                    text = "ဂဏန်း (2D)",
+                                    fontSize = 10.sp,
+                                    color = if (focusedField == FocusField.NUMBER) PrimaryGold else TextSecondary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (tempNumber.isEmpty()) "--" else tempNumber,
+                                    fontSize = 22.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = if (tempNumber.isEmpty()) TextMuted else TextPrimary
+                                )
+                            }
+                        }
 
-                        OutlinedTextField(
-                            value = tempAmount,
-                            onValueChange = { tempAmount = it.filter { c -> c.isDigit() } },
-                            label = { Text("ငွေပမာဏ (Ks)", fontSize = 11.sp) },
-                            modifier = Modifier
-                                .weight(1.2f)
-                                .clickable { focusedField = FocusField.AMOUNT },
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryGold,
-                                unfocusedBorderColor = CardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            )
-                        )
+                        // Amount Box
+                        Surface(
+                            onClick = { focusedField = FocusField.AMOUNT },
+                            shape = RoundedCornerShape(12.dp),
+                            color = SlateDarkBackground,
+                            border = BorderStroke(
+                                if (focusedField == FocusField.AMOUNT) 1.8.dp else 1.dp,
+                                if (focusedField == FocusField.AMOUNT) EmeraldPrimary else CardBorder
+                            ),
+                            modifier = Modifier.weight(1.3f)
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                Text(
+                                    text = "ငွေပမာဏ (Ks)",
+                                    fontSize = 10.sp,
+                                    color = if (focusedField == FocusField.AMOUNT) EmeraldPrimary else TextSecondary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "${String.format("%,d", tempAmount.toIntOrNull() ?: 0)} Ks",
+                                    fontSize = 20.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = EmeraldPrimary
+                                )
+                            }
+                        }
 
+                        // Submit Button
                         Button(
-                            onClick = { submit() },
-                            modifier = Modifier.height(52.dp),
-                            shape = RoundedCornerShape(10.dp),
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                submit()
+                            },
+                            modifier = Modifier.height(54.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGold)
                         ) {
-                            Text("ထည့်", color = SlateDarkBackground, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("ထည့်", color = SlateDarkBackground, fontWeight = FontWeight.Black, fontSize = 15.sp)
                         }
                     }
 
@@ -635,14 +667,119 @@ fun BettingScreen(
                     ) {
                         items(quickAmounts) { amt ->
                             SuggestionChip(
-                                onClick = { tempAmount = amt },
-                                label = { Text(amt, fontSize = 10.sp) },
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    tempAmount = amt
+                                },
+                                label = { Text(amt, fontSize = 10.sp, fontWeight = if (tempAmount == amt) FontWeight.Bold else FontWeight.Normal) },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
                                     containerColor = SlateDarkBackground,
                                     labelColor = if (tempAmount == amt) PrimaryGold else TextSecondary
                                 ),
                                 border = BorderStroke(0.5.dp, if (tempAmount == amt) PrimaryGold else CardBorder)
                             )
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // ── 2D Dedicated Tactile Number Pad (Uses အပူး instead of Tri) ──
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        // Row 1: [ 1 ] [ 2 ] [ 3 ] [ အပူး ]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            PadKey("1", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("1") }
+                            PadKey("2", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("2") }
+                            PadKey("3", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("3") }
+                            PadActionKey(
+                                title = "အပူး",
+                                subtitle = "00-99",
+                                bgColor = KeypadActionTeal,
+                                modifier = Modifier.weight(1.2f)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                handleSpecial("အပူး")
+                            }
+                        }
+
+                        // Row 2: [ 4 ] [ 5 ] [ 6 ] [ R ]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            PadKey("4", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("4") }
+                            PadKey("5", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("5") }
+                            PadKey("6", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("6") }
+                            PadActionKey(
+                                title = "R",
+                                subtitle = "အပြန်",
+                                bgColor = CobaltPrimary,
+                                modifier = Modifier.weight(1.2f)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                handleSpecial("R")
+                            }
+                        }
+
+                        // Row 3: [ 7 ] [ 8 ] [ 9 ] [ ⌫ ]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            PadKey("7", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("7") }
+                            PadKey("8", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("8") }
+                            PadKey("9", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("9") }
+                            PadActionKey(
+                                title = "⌫",
+                                subtitle = "ဖျက်",
+                                bgColor = KeypadBackspaceRed,
+                                modifier = Modifier.weight(1.2f)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                backspace()
+                            }
+                        }
+
+                        // Row 4: [ ရှင်း ] [ 0 ] [ ငွေ/ဂဏန်း ] [ ထည့် ]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            PadActionKey(
+                                title = "ရှင်း",
+                                subtitle = "Clear",
+                                bgColor = KeypadClearAmber,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                handleSpecial("ရှင်းပါ")
+                            }
+                            PadKey("0", Modifier.weight(1f)) { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); appendText("0") }
+                            PadActionKey(
+                                title = if (focusedField == FocusField.NUMBER) "ငွေသို့" else "ဂဏန်းသို့",
+                                subtitle = if (focusedField == FocusField.NUMBER) "Amount" else "Number",
+                                bgColor = SlateSurfaceVariant,
+                                contentColor = PrimaryGold,
+                                modifier = Modifier.weight(1.1f)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                focusedField = if (focusedField == FocusField.NUMBER) FocusField.AMOUNT else FocusField.NUMBER
+                            }
+                            PadActionKey(
+                                title = "ထည့်",
+                                subtitle = "OK",
+                                bgColor = PrimaryGold,
+                                contentColor = SlateDarkBackground,
+                                modifier = Modifier.weight(1.2f)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                submit()
+                            }
                         }
                     }
                 }
@@ -753,44 +890,65 @@ fun BettingScreen(
 }
 
 @Composable
-fun KeypadButton(
+fun PadKey(
     text: String,
-    bgColor: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Button(
+    Surface(
         onClick = onClick,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(containerColor = bgColor)
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = SlateDarkBackground,
+        border = BorderStroke(1.dp, CardBorder),
+        shadowElevation = 1.dp
     ) {
-        Text(text)
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = text,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = FontFamily.Monospace,
+                color = TextPrimary
+            )
+        }
     }
 }
+
 @Composable
-fun TactileKeypadButton(
-    text: String,
+fun PadActionKey(
+    title: String,
     subtitle: String? = null,
-    icon: ImageVector? = null,
-    bgColor: Color = Color.White,
-    contentColor: Color = if (bgColor == Color.White) Color.Black else Color.White,
-    bevelColor: Color = Color.Transparent,
+    bgColor: Color,
+    contentColor: Color = Color.White,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Button(
+    Surface(
         onClick = onClick,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(containerColor = bgColor, contentColor = contentColor)
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = bgColor,
+        shadowElevation = 2.dp
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (icon != null) {
-                Icon(icon, contentDescription = text, tint = contentColor)
-            } else {
-                Text(text, color = contentColor, fontWeight = FontWeight.Bold)
-            }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                color = contentColor
+            )
             if (!subtitle.isNullOrBlank()) {
-                Text(subtitle, fontSize = 9.sp, color = contentColor.copy(alpha = 0.8f))
+                Text(
+                    text = subtitle,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = contentColor.copy(alpha = 0.85f)
+                )
             }
         }
     }

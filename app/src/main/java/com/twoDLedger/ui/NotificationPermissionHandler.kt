@@ -23,7 +23,7 @@ fun NotificationPermissionHandler() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            try { FirebaseMessaging.getInstance().subscribeToTopic("3d_alerts") } catch (e: Exception) { e.printStackTrace() }
+            try { FirebaseMessaging.getInstance().subscribeToTopic("2d_alerts") } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -31,13 +31,13 @@ fun NotificationPermissionHandler() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val status = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             if (status == PackageManager.PERMISSION_GRANTED) {
-                try { FirebaseMessaging.getInstance().subscribeToTopic("3d_alerts") } catch (e: Exception) { e.printStackTrace() }
+                try { FirebaseMessaging.getInstance().subscribeToTopic("2d_alerts") } catch (e: Exception) { e.printStackTrace() }
             } else {
                 showRationale = true
             }
         } else {
             // Android 12 and below don't require runtime permission for notifications
-            try { FirebaseMessaging.getInstance().subscribeToTopic("3d_alerts") } catch (e: Exception) { e.printStackTrace() }
+            try { FirebaseMessaging.getInstance().subscribeToTopic("2d_alerts") } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -45,7 +45,7 @@ fun NotificationPermissionHandler() {
         AlertDialog(
             onDismissRequest = { showRationale = false },
             title = { Text("Enable Notifications") },
-            text = { Text("Please enable notifications so we can instantly alert you when the Thai 3D winning numbers are drawn.") },
+            text = { Text("Please enable notifications so we can instantly alert you when the Thai 2D winning numbers are drawn.") },
             confirmButton = {
                 Button(onClick = {
                     showRationale = false

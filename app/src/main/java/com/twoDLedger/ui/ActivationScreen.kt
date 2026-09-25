@@ -53,20 +53,21 @@ fun ActivationScreen(
     val expiredWarning by remember { mutableStateOf(licenseManager.getExpiredWarning()) }
     var migrationNotice by remember { mutableStateOf<String?>(null) }
 
-    var isCheckingAutoRestore by remember { mutableStateOf(!licenseManager.isActivated()) }
+    var isCheckingAutoRestore by remember { mutableStateOf(!licenseManager.isActivated() && licenseManager.getPendingCdKey() == null) }
 
     LaunchedEffect(Unit) {
         if (licenseManager.isActivated()) {
             onActivated()
             return@LaunchedEffect
         }
-        // Attempt cloud auto-restore for previously activated device
+        // Attempt cloud auto-restore with a fast 2.5s timeout for previously activated device
         try {
-            val restored = licenseManager.autoRestoreLicense()
-            if (restored) {
-                licenseManager.clearExpiredWarning()
-                onActivated()
-                return@LaunchedEffect
+            kotlinx.coroutines.withTimeoutOrNull(2500L) {
+                val restored = licenseManager.autoRestoreLicense()
+                if (restored) {
+                    licenseManager.clearExpiredWarning()
+                    onActivated()
+                }
             }
         } catch (_: Exception) {}
         isCheckingAutoRestore = false

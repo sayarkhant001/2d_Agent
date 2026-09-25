@@ -16,7 +16,7 @@ class LotteryMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Handle FCM messages here.
-        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "3D Lottery Update"
+        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "2D Lottery Update"
         val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "Check out the latest results!"
         
         sendNotification(title, body)
@@ -36,7 +36,7 @@ class LotteryMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
         )
 
-        val channelId = "3d_alerts_channel"
+        val channelId = "2d_alerts_channel"
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
@@ -54,7 +54,7 @@ class LotteryMessagingService : FirebaseMessagingService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "3D Alerts",
+                "2D Alerts",
                 NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)

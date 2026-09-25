@@ -76,9 +76,9 @@ private fun fmt(n: Long) = "%,d".format(n)
 private fun buildClipText(s: AgentSettlement, batch: Int, winNum: String): String =
     buildString {
         appendLine("========================")
-        appendLine("   3D ကော်မရှင် ရလဒ်   ")
+        appendLine("   2D ကော်မရှင် ရလဒ်   ")
         appendLine("========================")
-        appendLine("အကြိမ် = $batch ( $winNum )")
+        appendLine("၂ လုံးထီ ထွက်ဂဏန်း: $winNum")
         appendLine("အမည် = ${s.customer.name}")
         appendLine("ရောင်းကြေး = ${fmt(s.totalBet)} Ks")
         appendLine("ကော်မရှင် = ${fmt(s.commission)} Ks")
@@ -138,14 +138,8 @@ fun CommissionerResultScreen(
     val settlements: List<AgentSettlement> = remember(
         allCustomers, batchVouchers, winningNumber, exactMult, permMult, nearMult, paidMap
     ) {
-        if (winningNumber.length != 3) return@remember emptyList()
-        val allPerms = NumberGenerator.permutations(winningNumber).toSet()
-        val permsOnly = allPerms - setOf(winningNumber)
-        val winInt   = winningNumber.toIntOrNull() ?: return@remember emptyList()
-        val near     = setOf(
-            String.format("%03d", if (winInt == 0) 999 else winInt - 1),
-            String.format("%03d", if (winInt == 999) 0 else winInt + 1)
-        ) - setOf(winningNumber)
+        if (winningNumber.length != 2) return@remember emptyList()
+        val revWinning = com.twoDLedger.logic.TwoDNumberGenerator.reverse(winningNumber).filter { it != winningNumber }
 
         allCustomers.mapNotNull { customer ->
             if (customer.name.contains("တင်ကွက်") || customer.name.contains("overflow", ignoreCase = true) ||
@@ -164,7 +158,7 @@ fun CommissionerResultScreen(
             val commission   = (totalBet * customer.commissionRate).toLong()
             val netAfterComm = totalBet - commission
             val exactBets    = bets.filter { it.number == winningNumber }
-            val tuwtBets     = bets.filter { it.number in permsOnly || it.number in near }
+            val tuwtBets     = bets.filter { it.number in revWinning }
             val exactBetAmt  = exactBets.sumOf { it.amount }.toLong()
             val exactPayout  = (exactBetAmt * exactMult).toLong()
             val tuwtBetAmt   = tuwtBets.sumOf { it.amount }.toLong()
@@ -215,7 +209,7 @@ fun CommissionerResultScreen(
                 title = { 
                     Column {
                         Text("ကော်မရှင်ဆိုင်ရာ ရလဒ်", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("အကြိမ် $batchNumber ရှင်းတမ်း", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f), fontSize = 11.sp)
+                        Text("၂ လုံးထီ ရှင်းတမ်း", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f), fontSize = 11.sp)
                     }
                 },
                 navigationIcon = {
@@ -247,11 +241,11 @@ fun CommissionerResultScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("အကြိမ်", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("$batchNumber", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = ResPrimary)
+                        Text("အမျိုးအစား", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("၂ လုံးထီ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = ResPrimary)
                     }
 
-                    if (winningNumber.length == 3) {
+                    if (winningNumber.length == 2) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = ResRed,
@@ -302,7 +296,7 @@ fun CommissionerResultScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.FolderOpen, null, tint = ResPrimary.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
                             Spacer(Modifier.height(8.dp))
-                            Text("အကြိမ် $batchNumber တွင် ထိုးမှု မရှိသေးပါ", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                            Text("ထိုးမှု မရှိသေးပါ", color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                         }
                     }
                 else -> {
@@ -382,13 +376,13 @@ fun CommissionerResultScreen(
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(s.customer.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text("အကြိမ် $batchNumber • ထွက်ဂဏန်း: $winningNumber", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                        Text("ထွက်ဂဏန်း: $winningNumber", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    DialogRow("3D အကြိမ်", "$batchNumber ( $winningNumber )")
+                    DialogRow("၂ လုံး ပေါက်ဂဏန်း", "$winningNumber")
                     DialogRow("ထိုးသူ အမည်", s.customer.name)
                     HorizontalDivider(color = CardBorderSubtle)
                     DialogRow("ရောင်းကြေး", fmt(s.totalBet))
@@ -888,7 +882,7 @@ fun WinBreakdownDialog(
                     }
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        "$agentName • အကြိမ် $batchNumber (ထွက်ဂဏန်း: $winningNumber)",
+                        "$agentName • ထွက်ဂဏန်း: $winningNumber",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
@@ -1055,7 +1049,7 @@ fun WinBreakdownDialog(
                     onClick = {
                         val textToCopy = buildString {
                             appendLine("ℹ️ $title - $agentName")
-                            appendLine("အကြိမ် $batchNumber (ထွက်: $winningNumber) [×${multiplier.toInt()} ဆ]")
+                            appendLine("ထွက်ဂဏန်း: $winningNumber [×${multiplier.toInt()} ဆ]")
                             appendLine("------------------------")
                             details.forEach {
                                 appendLine("${it.number}=>>${it.amount}")

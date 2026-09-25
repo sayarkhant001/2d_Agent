@@ -42,6 +42,11 @@ class LotteryRepository(private val lotteryDao: LotteryDao) {
         return lotteryDao.insertVoucher(voucher)
     }
 
+    suspend fun deleteVoucher(voucherId: Int) {
+        lotteryDao.deleteBetsByVoucherId(voucherId)
+        lotteryDao.deleteVoucherById(voucherId)
+    }
+
     suspend fun insertBets(bets: List<Bet>) {
         lotteryDao.insertBets(bets)
     }

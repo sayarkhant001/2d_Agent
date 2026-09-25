@@ -41,7 +41,7 @@ fun CustomersScreen(
 ) {
     val customers    by viewModel.customers.collectAsStateWithLifecycle()
     val allVWB       by viewModel.vouchersWithBets.collectAsStateWithLifecycle()
-    val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
+    val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()
 
     var showAdd         by remember { mutableStateOf(false) }
     var editCustomer    by remember { mutableStateOf<Customer?>(null) }
@@ -151,7 +151,7 @@ fun CustomersScreen(
                                     modifier = Modifier.padding(end = 14.dp)
                                 ) {
                                     Text(
-                                        "အကြိမ် : $currentBatch",
+                                        if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
                                         color = MaterialTheme.colorScheme.onPrimary,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.5.sp,

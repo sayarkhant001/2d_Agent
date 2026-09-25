@@ -84,7 +84,7 @@ fun SettingsScreen(
                     Column {
                         Text("ဆက်တင်", fontWeight = FontWeight.Bold, fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onPrimary)
-                        Text("3D Ledger App", fontSize = 11.sp,
+                        Text("2D Ledger App", fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f))
                     }
                 },
@@ -167,7 +167,7 @@ fun SettingsScreen(
                     onCheckUpdate = {
                         updateCheckStatus = "checking"
                         coroutineScope.launch {
-                            val info = GitHubUpdater.checkForUpdates("sayarkhant001", "3d_Agent")
+                            val info = GitHubUpdater.checkForUpdates("sayarkhant001", "2d_Agent")
                             if (info == null) {
                                 updateCheckStatus = "error"
                             } else {
@@ -431,7 +431,7 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                     )
                     Button(
                         onClick = {
-                            val nums = newNumber.split(",", " ").map { it.trim() }.filter { it.length == 3 }
+                            val nums = newNumber.split(",", " ").map { it.trim() }.filter { it.length == 2 }
                             val limit = newLimit.toIntOrNull() ?: 0
                             if (nums.isNotEmpty()) {
                                 nums.forEach { n -> viewModel.addBannedNumber(n, limit) }
@@ -720,7 +720,7 @@ fun PrinterSettingsDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = {
                     coroutineScope.launch {
-                        val text = "========================\n      3D VOUCHER\n========================\n Test Print Successful\n========================"
+                        val text = "========================\n      2D VOUCHER\n========================\n Test Print Successful\n========================"
                         val bmp = com.twoDLedger.logic.BluetoothPrinter.createBitmapFromText(text, if (paperSize == "80mm") 576 else 384)
                         val ok  = com.twoDLedger.logic.BluetoothPrinter.printBitmap(bmp, paperSize)
                         android.widget.Toast.makeText(context, if (ok) "ပရင်ထုတ်ခြင်း အောင်မြင်ပါသည်" else "ပရင်ထုတ်ခြင်း မအောင်မြင်ပါ", android.widget.Toast.LENGTH_SHORT).show()

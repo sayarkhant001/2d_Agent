@@ -172,7 +172,7 @@ fun WinnerScreen(
                             color = PrimaryGold
                         )
                         Text(
-                            text = "အကြိမ် $targetBatch • $selectedSession",
+                            text = "2D ပေါက်ဂဏန်း • $selectedSession",
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary
                         )
@@ -370,20 +370,22 @@ fun WinnerScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(
-                                value = targetBatch,
-                                onValueChange = { targetBatch = it.filter { c -> c.isDigit() } },
-                                label = { Text("အကြိမ်", fontSize = 11.sp) },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PrimaryGold,
-                                    unfocusedBorderColor = CardBorder,
-                                    focusedTextColor = TextPrimary,
-                                    unfocusedTextColor = TextPrimary
-                                )
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (selectedSession == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE),
+                                modifier = Modifier.weight(1.1f).height(54.dp),
+                                onClick = {
+                                    selectedSession = if (selectedSession == "12:00 PM") "4:30 PM" else "12:00 PM"
+                                }
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text("အချိန် (Session)", fontSize = 9.5.sp, color = if (selectedSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF))
+                                    Text(selectedSession, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = if (selectedSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF))
+                                }
+                            }
 
                             OutlinedTextField(
                                 value = winningNumber,
@@ -609,12 +611,12 @@ fun WinnerScreen(
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
             title = { Text("ပေါက်သီးဖျက်မည်လော") },
-            text = { Text("အကြိမ် $targetBatch ၏ ပေါက်ဂဏန်းနှင့် တွက်ချက်ထားသော စာရင်းများကို ဖျက်ပါမည်။") },
+            text = { Text("$selectedSession ၏ ပေါက်ဂဏန်းနှင့် တွက်ချက်ထားသော စာရင်းများကို ဖျက်ပါမည်။") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val b = targetBatch.toIntOrNull() ?: currentBatch
-                        viewModel.clearWinningNumber(b)
+                        viewModel.clearWinningNumber(selectedSession, b)
                         winningNumber = ""
                         isDeclared = false
                         results = emptyList()

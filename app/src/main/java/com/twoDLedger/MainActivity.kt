@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
                     val viewModel: MainViewModel = viewModel(factory = MainViewModelFactory(repository, prefs))
                     
                     NotificationPermissionHandler()
-                    UpdateDialogHandler(owner = "sayarkhant001", repo = "3d_Agent")
+                    UpdateDialogHandler(owner = "sayarkhant001", repo = "2d_Agent")
                     AppNavigation(viewModel = viewModel)
                 }
             }

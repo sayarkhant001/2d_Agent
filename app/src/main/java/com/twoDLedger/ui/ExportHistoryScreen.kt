@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twoDLedger.data.ExportRecordWithNumbers
-import com.twoDLedger.logic.NumberGenerator
+import com.twoDLedger.logic.TwoDNumberGenerator
 import com.twoDLedger.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,13 +66,10 @@ fun ExportHistoryScreen(
     }
     val defaultCommRate = meCustomer?.commissionRate ?: 0.15
 
-    val batches = remember(exportRecords) {
-        exportRecords.map { it.record.batchNumber }.distinct().sortedDescending()
-    }
-    var selectedBatchFilter by remember { mutableStateOf<Int?>(null) }
-    val displayedRecords = remember(exportRecords, selectedBatchFilter) {
-        if (selectedBatchFilter == null) exportRecords
-        else exportRecords.filter { it.record.batchNumber == selectedBatchFilter }
+    var selectedSessionFilter by remember { mutableStateOf<String?>(null) }
+    val displayedRecords = remember(exportRecords, selectedSessionFilter) {
+        if (selectedSessionFilter == null) exportRecords
+        else exportRecords.filter { it.record.session == selectedSessionFilter || (it.record.session.isBlank() && selectedSessionFilter == "12:00 PM") }
     }
 
     val totalAmount = remember(displayedRecords) {
@@ -83,11 +80,8 @@ fun ExportHistoryScreen(
         displayedRecords.sumOf { it.numbers.size }
     }
 
-    val activeBatch = selectedBatchFilter ?: batches.firstOrNull() ?: viewModel.currentBatch.value
-    val activeBatchWinningNumber = remember(activeBatch, viewModel) {
-        viewModel.getWinningNumberForBatch(activeBatch)
-    }
-    val isWinningDeclared = activeBatchWinningNumber.length == 3
+    val activeWinningNumber by viewModel.winningNumber.collectAsStateWithLifecycle()
+    val isWinningDeclared = activeWinningNumber.length == 2
     var showUpperSettlementDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -108,11 +102,10 @@ fun ExportHistoryScreen(
                     totalAmount = totalAmount,
                     totalVouchers = totalVouchers,
                     totalNumbers = totalNumbers,
-                    selectedBatch = selectedBatchFilter,
+                    selectedBatch = null,
                     isWinningDeclared = isWinningDeclared,
                     onTapTotal = {
-                        val currentWin = viewModel.getWinningNumberForBatch(activeBatch)
-                        if (currentWin.length != 3) {
+                        if (activeWinningNumber.length != 2) {
                             Toast.makeText(
                                 context,
                                 "ပေါက်ဂဏန်း မကြေညာရသေးပါ (ရှင်းတမ်း ကြည့်၍ မရသေးပါ)",
@@ -131,28 +124,35 @@ fun ExportHistoryScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            if (batches.size > 1) {
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    item {
-                        FilterChip(
-                            selected = selectedBatchFilter == null,
-                            onClick = { selectedBatchFilter = null },
-                            label = { Text("အားလုံး (${exportRecords.size})") }
-                        )
-                    }
-                    items(batches) { batch ->
-                        val count = exportRecords.count { it.record.batchNumber == batch }
-                        FilterChip(
-                            selected = selectedBatchFilter == batch,
-                            onClick = { selectedBatchFilter = batch },
-                            label = { Text("အကြိမ် $batch ($count)") }
-                        )
-                    }
+            // 2D Session Filter Chips
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = selectedSessionFilter == null,
+                        onClick = { selectedSessionFilter = null },
+                        label = { Text("အားလုံး (${exportRecords.size})") }
+                    )
+                }
+                item {
+                    val count = exportRecords.count { it.record.session == "12:00 PM" || it.record.session.isBlank() }
+                    FilterChip(
+                        selected = selectedSessionFilter == "12:00 PM",
+                        onClick = { selectedSessionFilter = "12:00 PM" },
+                        label = { Text("☀️ ၁၂:၀၀ ($count)") }
+                    )
+                }
+                item {
+                    val count = exportRecords.count { it.record.session == "4:30 PM" }
+                    FilterChip(
+                        selected = selectedSessionFilter == "4:30 PM",
+                        onClick = { selectedSessionFilter = "4:30 PM" },
+                        label = { Text("🌙 ၄:၃၀ ($count)") }
+                    )
                 }
             }
 
@@ -205,17 +205,15 @@ fun ExportHistoryScreen(
         }
     }
 
-    if (showUpperSettlementDialog && activeBatchWinningNumber.length == 3) {
-        val activeBatchRecords = remember(exportRecords, activeBatch) {
-            exportRecords.filter { it.record.batchNumber == activeBatch }
-        }
-        val multipliers = remember(activeBatch) {
-            viewModel.getMultipliersForBatch(activeBatch)
+    if (showUpperSettlementDialog && activeWinningNumber.length == 2) {
+        val currentBatchVal = viewModel.currentBatch.value
+        val multipliers = remember(currentBatchVal) {
+            viewModel.getMultipliersForBatch(currentBatchVal)
         }
         UpperAgentSettlementDialog(
-            batchNumber = activeBatch,
-            winningNumber = activeBatchWinningNumber,
-            exportRecords = activeBatchRecords,
+            batchNumber = currentBatchVal,
+            winningNumber = activeWinningNumber,
+            exportRecords = displayedRecords,
             multipliers = multipliers,
             defaultCommissionRate = defaultCommRate,
             onDismiss = { showUpperSettlementDialog = false }
@@ -326,7 +324,7 @@ private fun ExportRecordCard(
     val voucherText = buildString {
         appendLine("      တင်ကွက် ဘောင်ချာ    ")
         appendLine(" ဘောင်ချာ : #${export.record.id}")
-        appendLine(" အကြိမ်   : ${export.record.batchNumber}")
+        appendLine(" အချိန်     : ${export.record.session}")
         appendLine(" အချိန်   : $voucherDate")
         appendLine("------------------------")
         sortedNumbers.forEachIndexed { idx, num ->
@@ -372,7 +370,7 @@ private fun ExportRecordCard(
                         }
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            "အကြိမ်: ${export.record.batchNumber}",
+                            "အချိန်: ${export.record.session}",
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Medium
@@ -593,8 +591,8 @@ fun UpperAgentSettlementDialog(
     val commDeduction = (totalSentBet * commRate).toLong()
     val netSentBet = totalSentBet - commDeduction
 
-    // Winning calculations
-    val allPerms = remember(winningNumber) { NumberGenerator.permutations(winningNumber).toSet() }
+    // Winning calculations (2D Exact & Reversal)
+    val allPerms = remember(winningNumber) { TwoDNumberGenerator.reverse(winningNumber).toSet() }
     val permsOnly = remember(winningNumber, allPerms) { allPerms - setOf(winningNumber) }
 
     val exactHits = remember(allSentBets, winningNumber) {
@@ -630,7 +628,7 @@ fun UpperAgentSettlementDialog(
             appendLine("ဒဲ့ပေါက် ($winningNumber) = %,d Ks (x${exactMult.toInt()}) → %,d Ks".format(exactBetAmt, exactPayout))
         }
         if (tutBetAmt > 0) {
-            appendLine("တွတ်ပေါက် = %,d Ks (x${permMult.toInt()}) → %,d Ks".format(tutBetAmt, tutPayout))
+            appendLine("R (ပြန်ပေါက်) = %,d Ks (x${permMult.toInt()}) → %,d Ks".format(tutBetAmt, tutPayout))
             tutBreakdown.forEach { (num, amt) ->
                 appendLine("  • $num: %,d Ks → %,d Ks".format(amt, (amt * permMult).toLong()))
             }
@@ -671,7 +669,7 @@ fun UpperAgentSettlementDialog(
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text("အထက်ဒိုင် ရှင်းတမ်း", fontWeight = FontWeight.Bold, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text("အကြိမ် $batchNumber", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.5.sp)
+                        Text("၂ လုံးထီ ရှင်းတမ်း", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.5.sp)
                     }
                 }
                 Surface(

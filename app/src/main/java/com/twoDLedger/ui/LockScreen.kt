@@ -53,7 +53,7 @@ fun LockScreen(viewModel: MainViewModel, onUnlock: () -> Unit) {
                 Box(contentAlignment = Alignment.BottomEnd) {
                     Image(
                         painter = painterResource(id = R.drawable.app_logo),
-                        contentDescription = "3D စာရင်း Logo",
+                        contentDescription = "2D စာရင်း Logo",
                         modifier = Modifier
                             .size(72.dp)
                             .clip(RoundedCornerShape(18.dp))
@@ -80,7 +80,7 @@ fun LockScreen(viewModel: MainViewModel, onUnlock: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    "3D စာရင်း လော့ခ်စနစ်",
+                    "2D စာရင်း လော့ခ်စနစ်",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface

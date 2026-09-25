@@ -100,6 +100,12 @@ interface LotteryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBets(bets: List<Bet>)
 
+    @Query("DELETE FROM vouchers WHERE id = :voucherId")
+    suspend fun deleteVoucherById(voucherId: Int)
+
+    @Query("DELETE FROM bets WHERE voucherId = :voucherId")
+    suspend fun deleteBetsByVoucherId(voucherId: Int)
+
     @Transaction
     @Query("SELECT * FROM vouchers WHERE isArchived = 1 ORDER BY timestamp DESC")
     fun getArchivedVouchersWithCustomer(): Flow<List<VoucherWithCustomer>>

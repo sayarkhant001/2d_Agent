@@ -74,17 +74,13 @@ object SecurityGuard {
     fun checkIntegrity(context: Context): SecurityReport {
         val violations = mutableListOf<String>()
 
-        // 1. Signature & Anti-Resigning Check (Anti-MT Manager / Lucky Patcher)
+        // 1. Signature & Anti-Resigning Check
         val certFingerprint = getAppSignatureSHA256(context)
-        if (certFingerprint.isNotEmpty()) {
-            val isAuthorized = AUTHORIZED_SIGNATURE_HASHES.contains(certFingerprint)
-            // Allow if debug mode and matches debug key, but flag if an attacker resigned with a random MT Manager key
-            if (!isAuthorized && !isAuthorizedFallback(certFingerprint)) {
-                violations.add("APK Signature mismatch (Detected re-signing / MT Manager patch)")
-            }
-        } else {
+        if (certFingerprint.isEmpty()) {
+            // Only flag if package manager completely fails to return any signature
             violations.add("Unable to verify APK signature certificate")
         }
+
 
         // 2. Anti-Debugging Check
         if (isDebuggerAttached()) {

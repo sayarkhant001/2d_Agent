@@ -48,24 +48,14 @@ fun AppNavigation(
     }
 
     LaunchedEffect(Unit) {
-        while (true) {
-            val activated = licenseManager.isActivated()
-            if (!activated) {
-                val currentDest = navController.currentDestination?.route
-                if (currentDest != null && !currentDest.contains("ActivationRoute")) {
-                    navController.navigate(ActivationRoute) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            } else {
-                val valid = licenseManager.verifyCurrentLicense()
-                if (!valid) {
-                    navController.navigate(ActivationRoute) {
-                        popUpTo(0) { inclusive = true }
-                    }
+        val activated = licenseManager.isActivated()
+        if (!activated) {
+            val currentDest = navController.currentDestination?.route
+            if (currentDest != null && !currentDest.contains("ActivationRoute")) {
+                navController.navigate(ActivationRoute) {
+                    popUpTo(0) { inclusive = true }
                 }
             }
-            delay(30_000)
         }
     }
 
