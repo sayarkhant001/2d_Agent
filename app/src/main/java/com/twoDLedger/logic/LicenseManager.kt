@@ -53,7 +53,20 @@ class LicenseManager(private val context: Context) {
 
     @SuppressLint("HardwareIds")
     fun getDeviceFingerprint(): String {
-        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
+        val saved = prefs.getString("stable_device_id", null)
+        if (!saved.isNullOrBlank()) return saved
+
+        val androidId = try {
+            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+        } catch (_: Exception) { null }
+
+        val finalId = if (!androidId.isNullOrBlank() && androidId != "9774d56d682e549c" && androidId.trim().isNotEmpty()) {
+            androidId.trim()
+        } else {
+            java.util.UUID.randomUUID().toString().replace("-", "").take(16)
+        }
+        prefs.edit().putString("stable_device_id", finalId).apply()
+        return finalId
     }
 
     fun getDeviceModel(): String {

@@ -601,17 +601,12 @@ fun UpperAgentSettlementDialog(
     val exactBetAmt = remember(exactHits) { exactHits.sumOf { it.amount.toLong() } }
     val exactPayout = remember(exactBetAmt, exactMult) { (exactBetAmt * exactMult).toLong() }
 
-    val tutHits = remember(allSentBets, permsOnly) {
-        allSentBets.filter { it.number in permsOnly }
-    }
-    val tutBetAmt = remember(tutHits) { tutHits.sumOf { it.amount.toLong() } }
-    val tutPayout = remember(tutBetAmt, permMult) { (tutBetAmt * permMult).toLong() }
+    val tutHits = emptyList<com.twoDLedger.data.Bet>()
+    val tutBetAmt = 0L
+    val tutPayout = 0L
+    val tutBreakdown = emptyMap<String, Long>()
 
-    val tutBreakdown = remember(tutHits) {
-        tutHits.groupBy { it.number }.mapValues { entry -> entry.value.sumOf { it.amount.toLong() } }
-    }
-
-    val totalUpperPayout = exactPayout + tutPayout
+    val totalUpperPayout = exactPayout
     val netBalance = totalUpperPayout - netSentBet
 
     fun buildSlip(): String = buildString {

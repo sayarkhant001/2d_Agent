@@ -110,12 +110,10 @@ fun OverflowScreen(
     val exactKeptAmt = if (isWonDeclared) keptAmount(exposureMap[batchWinningNumber]?.totalBetAmount ?: 0) else 0
     val exactPayout = (exactKeptAmt * exactMult).toLong()
 
-    val tuwtKeptAmt = if (isWonDeclared) {
-        brakedWinRows.filter { !it.isExact }.sumOf { it.amount }
-    } else 0
-    val tuwtPayout = (tuwtKeptAmt * permMult).toLong()
+    val tuwtKeptAmt = 0L
+    val tuwtPayout = 0L
 
-    val totalPayout = exactPayout + tuwtPayout
+    val totalPayout = exactPayout
     val brakedProfit = netAfterComm - totalPayout
 
     val totalOverflow = overflowExposures.sumOf { it.overflowAmount }
@@ -564,7 +562,7 @@ fun OverflowScreen(
                             BrakeSummaryRow(commLabel, "%,d".format(commAmount))
                             BrakeSummaryRow("နုတ်ပြီး", "%,d".format(netAfterComm))
                             BrakeSummaryRow("ပေါက်သီး", "%,d".format(exactPayout))
-                            BrakeSummaryRow("တွတ်", "%,d".format(tuwtPayout))
+                            // 2D has direct only - no tut
                             BrakeSummaryRow("အမြတ်ငွေ", "%,d".format(brakedProfit), isProfit = true)
                         }
                     } else {

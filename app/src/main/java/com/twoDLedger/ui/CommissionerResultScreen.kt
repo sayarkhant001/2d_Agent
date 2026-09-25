@@ -158,23 +158,17 @@ fun CommissionerResultScreen(
             val commission   = (totalBet * customer.commissionRate).toLong()
             val netAfterComm = totalBet - commission
             val exactBets    = bets.filter { it.number == winningNumber }
-            val tuwtBets     = bets.filter { it.number in revWinning }
+            val tuwtBets     = emptyList<com.twoDLedger.data.Bet>()
             val exactBetAmt  = exactBets.sumOf { it.amount }.toLong()
             val exactPayout  = (exactBetAmt * exactMult).toLong()
-            val tuwtBetAmt   = tuwtBets.sumOf { it.amount }.toLong()
-            val tuwtPayout   = (tuwtBetAmt * permMult).toLong()
-            val totalPayout  = exactPayout + tuwtPayout
+            val tuwtBetAmt   = 0L
+            val tuwtPayout   = 0L
+            val totalPayout  = exactPayout
             val balance      = netAfterComm - totalPayout
             val paid         = (paidMap[customer.id] ?: 0.0).toLong()
             val remaining    = if (balance >= 0) balance - paid else balance + paid
 
-            val tuwtDetails = tuwtBets
-                .groupBy { it.number }
-                .map { (num, list) ->
-                    val amt = list.sumOf { it.amount }.toLong()
-                    TutWinDetail(num, amt, (amt * permMult).toLong())
-                }
-                .sortedWith(compareByDescending<TutWinDetail> { it.amount }.thenBy { it.number })
+            val tuwtDetails = emptyList<TutWinDetail>()
 
             val exactDetails = exactBets
                 .groupBy { it.number }

@@ -37,8 +37,6 @@ private enum class NumCat(val label: String, val color: Color, val bgColor: Colo
 private fun categorize(number: String, winning: String): NumCat {
     if (winning.length != 2) return NumCat.NONE
     if (number == winning) return NumCat.EXACT
-    val rev = com.twoDLedger.logic.TwoDNumberGenerator.reverse(winning)
-    if (rev.contains(number) && number != winning) return NumCat.REVERSE
     return NumCat.NONE
 }
 
@@ -61,35 +59,25 @@ fun LedgerScreen(
         .sortedBy { it.number.toIntOrNull() ?: 0 }
     val totalAll = allExposures.sumOf { it.totalBetAmount }
 
-    // Multipliers for payout calculation
+    // Multipliers for payout calculation (2D direct only: 80x)
     val exactMult by viewModel.savedExactMult.collectAsStateWithLifecycle()
-    val tuwtMult  by viewModel.savedPermMult.collectAsStateWithLifecycle()
 
     // After mode — active when 2D winning number has been declared (2 digits)
     val isAfterMode = savedWinner.length == 2
 
-    // After-mode rows: winning 2D number and its reversal
+    // After-mode rows: winning 2D direct number only
     val relevantRows: List<Pair<LedgerExposure, NumCat>> =
         if (isAfterMode) {
             val exposureMap = allExposures.associateBy { it.number }
             val exactExp = exposureMap[savedWinner] ?: LedgerExposure(savedWinner, 0, 0, 0, 0)
-            val exactRow = exactExp to NumCat.EXACT
-
-            val revNums = com.twoDLedger.logic.TwoDNumberGenerator.reverse(savedWinner).filter { it != savedWinner }
-            val revRows = revNums.map { num ->
-                (exposureMap[num] ?: LedgerExposure(num, 0, 0, 0, 0)) to NumCat.REVERSE
-            }
-
-            listOf(exactRow) + revRows
+            listOf(exactExp to NumCat.EXACT)
         } else emptyList()
 
     val exactWonBets = relevantRows.filter { it.second == NumCat.EXACT }.sumOf { it.first.totalBetAmount }
-    val tuwtWonBets  = relevantRows.filter { it.second == NumCat.REVERSE }.sumOf { it.first.totalBetAmount }
-    val totalWonBets = exactWonBets + tuwtWonBets
+    val totalWonBets = exactWonBets
 
     val exactPayout = exactWonBets * exactMult
-    val tuwtPayout  = tuwtWonBets * tuwtMult
-    val totalPayout = exactPayout + tuwtPayout
+    val totalPayout = exactPayout
     val netBalance  = totalAll - totalPayout
     val rDimens = rememberResponsiveDimens()
 
@@ -99,7 +87,7 @@ fun LedgerScreen(
                 title = {
                     Column {
                         Text("ဂဏန်းများ စာရင်း", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text(if (isAfterMode) "ပေါက်သီး / တွတ် တိုက်စစ်ချက်" else "ထိုးထားသော ဂဏန်းများ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                        Text(if (isAfterMode) "ပေါက်သီး (ဒဲ့) တိုက်စစ်ချက်" else "ထိုးထားသော ဂဏန်းများ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                     }
                 },
                 navigationIcon = {

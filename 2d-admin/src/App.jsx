@@ -87,6 +87,7 @@ function App() {
   const [toast, setToast] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
   const [loggingIn, setLoggingIn] = useState(false);
+  const [adminToken, setAdminToken] = useState(null);
 
   // Key filtering & search
   const [keySearch, setKeySearch] = useState('');
@@ -139,70 +140,90 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auth state listener
+  const DB_BASE = 'https://dledger-1e687-default-rtdb.asia-southeast1.firebasedatabase.app';
+  const WORKER_URL = 'https://2d-scraper-worker.khaingkhantkyaw001.workers.dev';
+
+  // Restore authenticated session on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsubscribe;
+    const raw = sessionStorage.getItem('twoD_admin_session');
+    if (raw) {
+      try {
+        const s = JSON.parse(raw);
+        if (s && s.user && s.token && (Date.now() - (s.time || 0) < 3600 * 1000)) {
+          setUser(s.user);
+          setAdminToken(s.token);
+        } else {
+          sessionStorage.removeItem('twoD_admin_session');
+        }
+      } catch (_) {
+        sessionStorage.removeItem('twoD_admin_session');
+      }
+    }
+    setLoading(false);
   }, []);
 
-  // Realtime data listeners
+  // Secure Database Mutation Helpers with Admin Token
+  const dbUpdate = useCallback(async (path, updates) => {
+    if (!adminToken) throw new Error('Not authenticated');
+    const target = path ? `${DB_BASE}/${path}.json?access_token=${adminToken}` : `${DB_BASE}/.json?access_token=${adminToken}`;
+    const res = await fetch(target, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  }, [adminToken]);
+
+  const dbSet = useCallback(async (path, val) => {
+    if (!adminToken) throw new Error('Not authenticated');
+    const res = await fetch(`${DB_BASE}/${path}.json?access_token=${adminToken}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(val)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  }, [adminToken]);
+
+  // Realtime & Periodic data sync for authorized admin
   useEffect(() => {
-    if (!user) return;
+    if (!user || !adminToken) return;
 
-    const unsubs = [];
+    const loadData = async () => {
+      try {
+        const [kRes, mRes, sRes, rRes, pRes, bRes, relRes, reselRes] = await Promise.all([
+          fetch(`${DB_BASE}/2d_licenses/keys.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_lottery_config/mode.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_lottery_status/state.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_live_results.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_licenses/sale_plans.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_lottery_config/current_batch.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_app_release.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+          fetch(`${DB_BASE}/2d_licenses/resellers.json?access_token=${adminToken}`).then(r => r.ok ? r.json() : null),
+        ]);
 
-    const keysRef = ref(db, '3d_licenses/keys');
-    unsubs.push(onValue(keysRef, (snap) => {
-      setKeys(snap.val() || {});
-    }));
-
-    const modeRef = ref(db, '3d_lottery_config/mode');
-    unsubs.push(onValue(modeRef, (snap) => {
-      setMode(snap.val() || 'auto');
-    }));
-
-    const statusRef = ref(db, '3d_lottery_status/state');
-    unsubs.push(onValue(statusRef, (snap) => {
-      setLotteryStatus(snap.val() || 'normal');
-    }));
-
-    const resultsRef = ref(db, '3d_live_results');
-    unsubs.push(onValue(resultsRef, (snap) => {
-      setLiveResults(snap.val() || {});
-    }));
-
-    const plansRef = ref(db, '3d_licenses/sale_plans');
-    unsubs.push(onValue(plansRef, (snap) => {
-      const p = snap.val();
-      if (p && Object.keys(p).length > 0) {
-        setSalePlans(p);
-      } else {
-        setSalePlans(DEFAULT_SALE_PLANS);
+        if (kRes) setKeys(kRes);
+        if (mRes !== null) setMode(mRes || 'auto');
+        if (sRes !== null) setLotteryStatus(sRes || 'normal');
+        if (rRes) setLiveResults(rRes);
+        if (pRes && Object.keys(pRes).length > 0) setSalePlans(pRes);
+        if (bRes !== null) {
+          const b = bRes || 1;
+          setCurrentBatch(b);
+          setBatchInput(String(b));
+        }
+        if (relRes) setAppRelease(relRes);
+        if (reselRes) setResellers(reselRes);
+      } catch (err) {
+        console.warn('Data sync warning:', err);
       }
-    }));
+    };
 
-    const batchRef = ref(db, '3d_lottery_config/current_batch');
-    unsubs.push(onValue(batchRef, (snap) => {
-      const b = snap.val() || 1;
-      setCurrentBatch(b);
-      setBatchInput(String(b));
-    }));
-
-    const releaseRef = ref(db, '3d_app_release');
-    unsubs.push(onValue(releaseRef, (snap) => {
-      setAppRelease(snap.val() || null);
-    }));
-
-    const resellersRef = ref(db, '3d_licenses/resellers');
-    unsubs.push(onValue(resellersRef, (snap) => {
-      setResellers(snap.val() || {});
-    }));
-
-    return () => unsubs.forEach(u => u());
-  }, [user]);
+    loadData();
+    const timer = setInterval(loadData, 5000);
+    return () => clearInterval(timer);
+  }, [user, adminToken]);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -213,44 +234,49 @@ function App() {
     e.preventDefault();
     setLoginError('');
     setLoggingIn(true);
-    const email = e.target.email?.value || 'admin@2d-ledger.com';
-    const password = e.target.password?.value || 'admin123456';
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      console.warn('Sign-in error:', err);
-      setLoginError('Invalid credentials. You can tap "1-Tap Admin Login" to enter automatically.');
+    let email = (e.target.email?.value || '').trim();
+    if (email && !email.includes('@')) {
+      email = email + '@gmail.com';
+    } else if (email.endsWith('@gmail')) {
+      email = email + '.com';
     }
-    setLoggingIn(false);
-  };
+    const password = e.target.password?.value || '';
 
-  const quickLoginAdmin = async () => {
-    setLoginError('');
-    setLoggingIn(true);
-    try {
-      await signInWithEmailAndPassword(auth, 'admin@2d-ledger.com', 'admin123456');
-    } catch (err) {
-      console.warn('Direct sign-in fallback:', err);
-      setUser({ email: 'admin@2d-ledger.com', isDemo: true });
+    // Authorized check: Only khaingkhantkyaw001@gmail.com
+    if (email.toLowerCase() !== 'khaingkhantkyaw001@gmail.com') {
+      setLoginError('Access Denied: Only authorized administrator (khaingkhantkyaw001@gmail.com) is permitted.');
+      setLoggingIn(false);
+      return;
     }
-    setLoggingIn(false);
-  };
 
-  const enterGuestMode = async () => {
-    setLoginError('');
-    setLoggingIn(true);
     try {
-      await signInWithEmailAndPassword(auth, 'admin@2d-ledger.com', 'admin123456');
+      const res = await fetch(`${WORKER_URL}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setLoginError(data.error || 'Access Denied: Invalid credentials.');
+        setLoggingIn(false);
+        return;
+      }
+
+      const session = { user: data.user, token: data.token, time: Date.now() };
+      sessionStorage.setItem('twoD_admin_session', JSON.stringify(session));
+      setUser(data.user);
+      setAdminToken(data.token);
     } catch (err) {
-      setUser({ email: 'admin@2d-ledger.com', isDemo: true });
+      console.warn('Login error:', err);
+      setLoginError('Sign-in failed. Please verify network connection.');
     }
     setLoggingIn(false);
   };
 
   const handleLogout = () => {
-    signOut(auth);
+    sessionStorage.removeItem('twoD_admin_session');
     setUser(null);
+    setAdminToken(null);
   };
 
   // ── Fetch fast real-time Thai 3D / GLO result with multi-tier failover ────────
@@ -368,28 +394,28 @@ function App() {
     const tut = calculateTutNumbers(gloResult.threeD);
     const sourceLabel = gloResult.source || gloResult.session || 'Live Fast Feed (~3:15 PM MMT)';
     const updates = {
-      '3d_live_results/winning_number': gloResult.threeD,
-      '3d_live_results/first_prize': gloResult.firstPrize || '',
-      '3d_live_results/twod': gloResult.twoD || '',
-      '3d_live_results/result_date': gloResult.date || '',
-      '3d_live_results/result_time': gloResult.session || '3:15 PM MMT Live Draw',
-      '3d_live_results/source': sourceLabel,
-      '3d_live_results/is_final': true,
-      '3d_live_results/updated_at': Date.now(),
-      '3d_lottery_status/state': 'declared',
-      '3d_live_results/tut_permutations': tut.permutations,
-      '3d_live_results/tut_near_misses': tut.nearMisses,
-      '3d_live_results/tut_all': tut.allTut
+      '2d_live_results/winning_number': gloResult.threeD,
+      '2d_live_results/first_prize': gloResult.firstPrize || '',
+      '2d_live_results/twod': gloResult.twoD || '',
+      '2d_live_results/result_date': gloResult.date || '',
+      '2d_live_results/result_time': gloResult.session || '3:15 PM MMT Live Draw',
+      '2d_live_results/source': sourceLabel,
+      '2d_live_results/is_final': true,
+      '2d_live_results/updated_at': Date.now(),
+      '2d_lottery_status/state': 'declared',
+      '2d_live_results/tut_permutations': tut.permutations,
+      '2d_live_results/tut_near_misses': tut.nearMisses,
+      '2d_live_results/tut_all': tut.allTut
     };
 
     if (updateBatchWithResult) {
       const b = parseInt(batchInput, 10);
       if (!isNaN(b) && b >= 1) {
-        updates['3d_lottery_config/current_batch'] = b;
+        updates['2d_lottery_config/current_batch'] = b;
       }
     }
 
-    await update(ref(db), updates);
+    await dbUpdate('', updates);
 
     // Sync manual inputs for consistency
     setManualNumber(gloResult.threeD);
@@ -422,7 +448,7 @@ function App() {
       showToast('Please enter a valid price', 'error');
       return;
     }
-    await update(ref(db, `3d_licenses/sale_plans/${planId}`), { price });
+    await dbUpdate(`2d_licenses/sale_plans/${planId}`, { price });
     showToast(`Updated ${planId} price to ${price.toLocaleString()} Ks (Synced with Telegram Bot)`);
     setEditingPlanPrice(prev => ({ ...prev, [planId]: undefined }));
   };
@@ -502,7 +528,7 @@ function App() {
       updates[`3d_licenses/resellers/${assignedReseller.telegram_id}/total_generated`] = (assignedReseller.total_generated || 0) + count;
     }
 
-    await update(ref(db), updates);
+    await dbUpdate('', updates);
     setGeneratedKey(newlyGenerated[0]);
     setBulkGeneratedKeys(newlyGenerated);
     showToast(assignedReseller
@@ -513,7 +539,7 @@ function App() {
   const generateKey = generateKeysBatch;
 
   const revokeKey = async (keyId) => {
-    await update(ref(db, `3d_licenses/keys/${keyId}`), {
+    await dbUpdate(`2d_licenses/keys/${keyId}`, {
       status: 'available',
       claimed_by: null,
       activated_at: null
@@ -522,7 +548,7 @@ function App() {
   };
 
   const deleteKey = async (keyId) => {
-    await set(ref(db, `3d_licenses/keys/${keyId}`), null);
+    await dbSet(`2d_licenses/keys/${keyId}`, null);
     showToast('Key deleted', 'error');
   };
 
@@ -574,7 +600,7 @@ function App() {
         notes: settleNotes.trim() || 'Manual Due Settlement (Web Admin)'
       };
 
-      await update(ref(db), updates);
+      await dbUpdate('', updates);
       showToast(`Successfully settled ${amount.toLocaleString()} Ks for ${settleModalReseller.name}!`);
       handleCloseSettleModal();
     } catch (err) {
@@ -586,7 +612,7 @@ function App() {
   };
 
   const toggleMode = async (newMode) => {
-    await set(ref(db, '3d_lottery_config/mode'), newMode);
+    await dbSet('2d_lottery_config/mode', newMode);
     showToast(`Switched to ${newMode.toUpperCase()} mode`);
   };
 
@@ -596,7 +622,7 @@ function App() {
       showToast('Please enter a valid batch number', 'error');
       return;
     }
-    await set(ref(db, '3d_lottery_config/current_batch'), b);
+    await dbSet('2d_lottery_config/current_batch', b);
     showToast(`Current Batch updated to #${b}`);
   };
 
@@ -607,23 +633,23 @@ function App() {
     }
 
     const updates = {
-      '3d_live_results/winning_number': manualNumber,
-      '3d_lottery_status/state': manualStatus,
-      '3d_live_results/updated_at': Date.now()
+      '2d_live_results/winning_number': manualNumber,
+      '2d_lottery_status/state': manualStatus,
+      '2d_live_results/updated_at': Date.now()
     };
 
     if (manualDate) {
-      updates['3d_live_results/target_draw_date'] = manualDate;
+      updates['2d_live_results/target_draw_date'] = manualDate;
     }
 
     if (updateBatchWithResult) {
       const b = parseInt(batchInput, 10);
       if (!isNaN(b) && b >= 1) {
-        updates['3d_lottery_config/current_batch'] = b;
+        updates['2d_lottery_config/current_batch'] = b;
       }
     }
 
-    await update(ref(db), updates);
+    await dbUpdate('', updates);
     showToast(`Result ${manualNumber} pushed to app as "${manualStatus}"!`);
   };
 
@@ -633,18 +659,18 @@ function App() {
     }
 
     const updates = {
-      '3d_live_results/winning_number': '',
-      '3d_live_results/first_prize': '',
-      '3d_live_results/twod': '',
-      '3d_live_results/is_final': false,
-      '3d_live_results/updated_at': Date.now(),
-      '3d_lottery_status/state': 'waiting',
-      '3d_live_results/tut_permutations': [],
-      '3d_live_results/tut_near_misses': [],
-      '3d_live_results/tut_all': []
+      '2d_live_results/winning_number': '',
+      '2d_live_results/first_prize': '',
+      '2d_live_results/twod': '',
+      '2d_live_results/is_final': false,
+      '2d_live_results/updated_at': Date.now(),
+      '2d_lottery_status/state': 'waiting',
+      '2d_live_results/tut_permutations': [],
+      '2d_live_results/tut_near_misses': [],
+      '2d_live_results/tut_all': []
     };
 
-    await update(ref(db), updates);
+    await dbUpdate('', updates);
     setManualNumber('');
     setManualStatus('waiting');
     showToast('ပေါက်သီး ရလဒ်ကို အောင်မြင်စွာ ဖျက်သိမ်းပြီးပါပြီ (Winning number cleared & reset to Waiting)');
@@ -938,44 +964,16 @@ function App() {
       <div className="login-container">
         <div className="login-card">
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
-            <span className="login-badge-pill">
-              <span className="live-pulse-dot"></span> Cloudflare Pages Live &bull; v2.4 PRO
+            <span className="login-badge-pill" style={{ borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+              🔒 Restricted &bull; Authorized Admin Only
             </span>
           </div>
           <img src="/app_logo.jpg" alt="2D စာရင်း" className="app-logo-large" />
           <h1>2D Lottery Admin</h1>
           <p className="burmese-subtitle">2D စာရင်း PRO စီမံခန့်ခွဲမှုစနစ်</p>
-          <p className="subtitle">Sign in to manage your 3D Ledger system, keys & GLO results</p>
+          <p className="subtitle">Sign in with your authorized administrator credentials</p>
 
-          {loginError && <div className="login-error">{loginError}</div>}
-
-          {/* 1-Tap Quick Login Button */}
-          <div style={{ marginBottom: 20 }}>
-            <button
-              type="button"
-              className="btn btn-primary btn-full quick-login-btn"
-              onClick={quickLoginAdmin}
-              disabled={loggingIn}
-              style={{
-                background: 'linear-gradient(135deg, #4f46e5 0%, #059669 100%)',
-                boxShadow: '0 4px 18px rgba(79, 70, 229, 0.45)',
-                padding: '14px 18px',
-                fontSize: '15px',
-                fontWeight: '800',
-                letterSpacing: '0.2px',
-                borderRadius: '12px'
-              }}
-            >
-              {loggingIn ? '⏳ Logging in as Admin...' : '🚀 1-Tap Admin Login (တိုက်ရိုက် ဝင်မည်)'}
-            </button>
-            <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-              အပေါ်ပါခလုတ်ကို ၁ ချက်နှိပ်ရုံဖြင့် Dashboard သို့ တိုက်ရိုက် ရောက်ရှိပါမည်
-            </div>
-          </div>
-
-          <div className="login-divider">
-            <span>OR SIGN IN WITH CREDENTIALS</span>
-          </div>
+          {loginError && <div className="login-error" style={{ marginBottom: 16 }}>{loginError}</div>}
 
           <form onSubmit={handleLogin}>
             <div className="form-group">
@@ -983,8 +981,8 @@ function App() {
               <input
                 name="email"
                 type="email"
-                defaultValue="admin@2d-ledger.com"
-                placeholder="admin@2d-ledger.com"
+                placeholder="khaingkhantkyaw001@gmail.com"
+                autoComplete="username"
                 required
               />
             </div>
@@ -993,36 +991,28 @@ function App() {
               <input
                 name="password"
                 type="password"
-                defaultValue="admin123456"
                 placeholder="••••••••"
+                autoComplete="current-password"
                 required
               />
             </div>
             <button
               type="submit"
-              className="btn btn-secondary btn-full"
+              className="btn btn-primary btn-full"
               disabled={loggingIn}
-              style={{ padding: '12px', fontWeight: '700' }}
+              style={{
+                padding: '14px',
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+              }}
             >
-              {loggingIn ? '⏳ Signing in...' : '🔐 Sign In (အကောင့်ဖြင့် ဝင်မည်)'}
+              {loggingIn ? '⏳ Verifying credentials...' : '🔐 Sign In (အကောင့်ဖြင့် ဝင်မည်)'}
             </button>
           </form>
 
-          <div style={{ marginTop: 20, textAlign: 'center' }}>
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={enterGuestMode}
-              style={{
-                fontSize: 12,
-                borderStyle: 'dashed',
-                borderColor: 'rgba(52, 211, 153, 0.5)',
-                color: 'var(--accent-success)',
-                padding: '6px 14px'
-              }}
-            >
-              👀 Guest / Demo Preview Mode (စမ်းသပ်ကြည့်ရှုမည်)
-            </button>
+          <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
+            ⚠️ Public access is strictly prohibited. All actions are authenticated and secured.
           </div>
         </div>
       </div>

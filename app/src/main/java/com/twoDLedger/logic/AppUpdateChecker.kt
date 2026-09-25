@@ -14,11 +14,11 @@ data class AppUpdateInfo(
     val latestVersionCode: Int,
     val releaseNotes: String,
     val downloadUrl: String? = null,
-    val telegramBotUrl: String = "https://t.me/threed_ledger_bot?start=download"
+    val telegramBotUrl: String = "https://t.me/twoDLedger2026bot?start=download"
 )
 
 object AppUpdateChecker {
-    private const val UPDATE_API_URL = "https://3d-scraper-worker.khaingkhantkyaw001.workers.dev/api/app/latest"
+    private const val UPDATE_API_URL = "https://2d-scraper-worker.khaingkhantkyaw001.workers.dev/api/app/latest"
 
     suspend fun checkForUpdate(context: Context): AppUpdateInfo? = withContext(Dispatchers.IO) {
         try {

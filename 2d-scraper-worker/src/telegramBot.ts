@@ -296,38 +296,8 @@ export interface TutResult {
 }
 
 export function calculateTutNumbers(winningNumber: string): TutResult {
-  if (!/^\d{3}$/.test(winningNumber)) {
-    return { winningNumber, permutations: [], nearMisses: [], allTut: [] };
-  }
-
-  // 1. Permutations (အပြန်များ - anagrams excluding self)
-  const digits = winningNumber.split('');
-  const perms = new Set<string>();
-  const permute = (arr: string[], m: string[] = []) => {
-    if (arr.length === 0) {
-      perms.add(m.join(''));
-    } else {
-      for (let i = 0; i < arr.length; i++) {
-        const curr = arr.slice();
-        const next = curr.splice(i, 1);
-        permute(curr.slice(), m.concat(next));
-      }
-    }
-  };
-  permute(digits);
-  perms.delete(winningNumber);
-  const permutations = Array.from(perms).sort();
-
-  // 2. Near-misses (ကပ်သီး +1, -1 with 000-999 cyclic boundary)
-  const numInt = parseInt(winningNumber, 10);
-  const minus1 = String(numInt === 0 ? 999 : numInt - 1).padStart(3, '0');
-  const plus1 = String(numInt === 999 ? 0 : numInt + 1).padStart(3, '0');
-  const nearMisses = [minus1, plus1].filter(n => n !== winningNumber);
-
-  // 3. Combined Tut (တွတ်)
-  const allTut = Array.from(new Set([...permutations, ...nearMisses])).sort();
-
-  return { winningNumber, permutations, nearMisses, allTut };
+  // In 2D lottery, there is no Tut (တွတ် မရှိပါ). Direct only.
+  return { winningNumber, permutations: [], nearMisses: [], allTut: [] };
 }
 
 // ── CD Key Generator (32 hex/alphanumeric chars in 8 blocks) ──────────────────
@@ -1374,8 +1344,7 @@ export async function sendAppToUser(
         { text: '❓ အသုံးပြုပုံ လမ်းညွှန်', callback_data: 'b_help' }
       ],
       [
-        { text: '🇹🇭 2D Live ရလဒ် ကြည့်မည်', callback_data: 'b_live_refresh' },
-        { text: '🔢 တွတ် ဂဏန်းများ တွက်မည်', callback_data: 'tut:108' }
+        { text: '🇹🇭 2D Live ရလဒ် ကြည့်မည်', callback_data: 'b_live_refresh' }
       ]
     ]
   };
@@ -1725,8 +1694,8 @@ export function getBuyerBottomKeyboard(): ReplyKeyboardMarkup {
     keyboard: [
       [{ text: '📲 အက်ပ် ဒေါင်းလုဒ်ရယူရန်' }, { text: '🎁 ၃ ရက် အခမဲ့ စမ်းသပ်ခွင့်' }],
       [{ text: '🛒 လိုင်စင် ဝယ်ယူမည်' }, { text: '🇹🇭 2D Live ရလဒ်' }],
-      [{ text: '🔢 တွတ် ဂဏန်းများ' }, { text: '🎯 ပေါက်မဲ စစ်မည်' }],
-      [{ text: '🆔 ကျွန်ုပ်၏ ID' }, { text: '❓ အကူအညီ' }]
+      [{ text: '🎯 ပေါက်မဲ စစ်မည်' }, { text: '🆔 ကျွန်ုပ်၏ ID' }],
+      [{ text: '❓ အကူအညီ' }]
     ],
     resize_keyboard: true,
     is_persistent: true
@@ -2986,18 +2955,8 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
 
     // Public Tut Calculator callback: tut:<number>
     else if (data.startsWith('tut:')) {
-      const num = data.split(':')[1];
-      if (/^\d{3}$/.test(num)) {
-        const tut = calculateTutNumbers(num);
-        await answerCallbackQuery(env, cq.id, `ဂဏန်း ${num} ၏ တွတ်များ`);
-        const tutText = `🔢 <b>ဂဏန်း <code>${num}</code> ၏ တွတ် ဂဏန်းများ (${tut.allTut.length} ကွက်):</b>\n\n` +
-          `<code>${tut.allTut.join(', ')}</code>\n\n` +
-          `• <i>အပြန်:</i> ${tut.permutations.join(', ') || 'မရှိပါ'}\n` +
-          `• <i>ကပ်သီး:</i> ${tut.nearMisses.join(', ')}`;
-        await sendTelegramMessage(env, chatId, tutText);
-      } else {
-        await answerCallbackQuery(env, cq.id, 'ဂဏန်း မှားယွင်းနေပါသည်', true);
-      }
+      await answerCallbackQuery(env, cq.id);
+      await sendTelegramMessage(env, chatId, 'ℹ️ <b>2D စနစ်တွင် တွတ် (Tut) မရှိပါ။ ဒဲ့ (Direct) သီးသန့်သာ ဖြစ်ပြီး အဆ ၈၀ (x80) လျော်ကြေး ရရှိပါမည်။</b>');
       return new Response(JSON.stringify({ status: 'ok' }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -3010,7 +2969,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
           inline_keyboard: [
             [
               { text: '🔄 အသစ်ပြန်စစ်မည်', callback_data: 'b_live_refresh' },
-              { text: '🔢 တွတ် ဂဏန်းများ', callback_data: `tut:${glo.threeD}` }
+              { text: '🎯 ပေါက်မဲ စစ်မည် (x80)', callback_data: 'b_check_prompt' }
             ],
             [
               { text: '📲 အက်ပ် ဒေါင်းလုဒ်ရယူရန်', callback_data: 'b_app_download' },
@@ -3019,10 +2978,10 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
           ]
         };
         const text = `🇹🇭 <b>ထိုင်း GLO တရားဝင် 2D ရလဒ်</b>\n\n` +
-          `🎯 <b>2D ပေါက်ဂဏန်း:</b> <code>${glo.threeD}</code>\n` +
+          `🎯 <b>2D ပေါက်ဂဏန်း:</b> <code>${glo.twoD}</code>\n` +
           `🥇 <b>ပထမဆု (1st Prize):</b> <code>${glo.firstPrize}</code>\n` +
-          `🔢 <b>2D:</b> <code>${glo.twoD}</code>\n` +
           `📅 <b>ထွက်သည့်ရက်:</b> ${glo.date}\n` +
+          `💰 <b>ဆုကြေး:</b> <b>ဒဲ့ အဆ ၈၀ (x80)</b>\n` +
           `⚡ <b>ရင်းမြစ်:</b> ${glo.source || glo.session}`;
         await sendTelegramMessage(env, chatId, text, liveKb);
       }
@@ -4754,50 +4713,32 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
     }
 
     if (text.startsWith('/tut')) {
-      const parts = text.split(/\s+/);
-      const num = parts.length > 1 ? parts[1].trim() : '';
-      if (/^\d{3}$/.test(num)) {
-        const tut = calculateTutNumbers(num);
-        await sendTelegramMessage(env, chatId,
-          `🔢 <b>ဂဏန်း <code>${num}</code> ၏ တွတ် ဂဏန်းများ (${tut.allTut.length} ကွက်):</b>\n\n` +
-          `<code>${tut.allTut.join(', ')}</code>\n\n` +
-          `• <i>အပြန်:</i> ${tut.permutations.join(', ') || 'မရှိပါ'}\n` +
-          `• <i>ကပ်သီး:</i> ${tut.nearMisses.join(', ')}`,
-          userRoleKb
-        );
-      } else {
-        await sendTelegramMessage(env, chatId, '⚠️ <i>၃ လုံးဂဏန်း ရိုက်ထည့်ပေးပါ။ ဥပမာ: /tut 108</i>', userRoleKb);
-      }
+      await sendTelegramMessage(env, chatId, 'ℹ️ <b>2D စနစ်တွင် တွတ် (Tut) မရှိပါ။ ဒဲ့ (Direct) သီးသန့်သာ ဖြစ်ပြီး အဆ ၈၀ (x80) လျော်ကြေး ရရှိပါမည်။</b>\n\n🎯 <b>ပေါက်မဲ စစ်ရန်:</b> <code>/check 58</code> ဟု ရိုက်ထည့်ပါ', userRoleKb);
       return new Response('ok');
     }
 
-    if (text.startsWith('/check')) {
+    if (text.startsWith('/check') || text === '🎯 ပေါက်မဲ စစ်မည်' || text === '🎯 ပေါက်မဲ စစ်ဆေးရန်') {
       const parts = text.split(/\s+/);
       const num = parts.length > 1 ? parts[1].trim() : '';
-      if (/^\d{3}$/.test(num)) {
+      if (/^\d{2}$/.test(num)) {
         let currentWinner = '';
         try {
           const token = await getFirebaseToken(env);
           const res = await fetch(`${env.FIREBASE_DB_URL}/2d_live_results/winning_number.json`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (res.ok) currentWinner = String(await res.json() || '');
+          if (res.ok) currentWinner = String(await res.json() || '').trim();
         } catch (_) {}
 
         if (!currentWinner) {
-          await sendTelegramMessage(env, chatId, '⚠️ <i>လက်ရှိ ပေါက်ဂဏန်း မကြေညာရသေးပါ</i>', userRoleKb);
+          await sendTelegramMessage(env, chatId, '⚠️ <i>လက်ရှိ 2D ပေါက်ဂဏန်း မကြေညာရသေးပါ</i>', userRoleKb);
         } else if (num === currentWinner) {
-          await sendTelegramMessage(env, chatId, `🎉 <b>ဂုဏ်ယူပါသည်! <code>${num}</code> သည် တိုက်ရိုက်ပေါက်သီး (ဒဲ့) ဖြစ်ပါသည်!</b>`, userRoleKb);
+          await sendTelegramMessage(env, chatId, `🎉 <b>ဂုဏ်ယူပါသည်! <code>${num}</code> သည် တိုက်ရိုက်ပေါက်သီး (ဒဲ့) ဖြစ်ပါသည်!</b>\n\n💰 <b>ဆုကြေး: ဒဲ့ အဆ ၈၀ (x80) ရရှိပါမည်။</b>`, userRoleKb);
         } else {
-          const tut = calculateTutNumbers(currentWinner);
-          if (tut.allTut.includes(num)) {
-            await sendTelegramMessage(env, chatId, `✨ <b>ဂုဏ်ယူပါသည်! <code>${num}</code> သည် တွတ် ဂဏန်း ပေါက်ပါသည်!</b> (ပေါက်သီး: <code>${currentWinner}</code>)`, userRoleKb);
-          } else {
-            await sendTelegramMessage(env, chatId, `❌ <code>${num}</code> သည် ပေါက်မဲ မဟုတ်ပါ။ (ပေါက်သီး: <code>${currentWinner}</code>)`, userRoleKb);
-          }
+          await sendTelegramMessage(env, chatId, `❌ <code>${num}</code> သည် ပေါက်မဲ မဟုတ်ပါ။ (ယနေ့ ပေါက်သီး: <code>${currentWinner}</code>)`, userRoleKb);
         }
       } else {
-        await sendTelegramMessage(env, chatId, '⚠️ <i>၃ လုံးဂဏန်း ရိုက်ထည့်ပေးပါ။ ဥပမာ: /check 108</i>', userRoleKb);
+        await sendTelegramMessage(env, chatId, '⚠️ <i>၂ လုံးဂဏန်း (2D) ရိုက်ထည့်ပေးပါ။ ဥပမာ: /check 58</i>', userRoleKb);
       }
       return new Response('ok');
     }

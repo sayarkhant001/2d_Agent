@@ -288,19 +288,19 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
 
     // ── Per-batch multipliers (saved when ပေါက်သီး is declared) ──────────────
     val savedExactMult = MutableStateFlow(80.0)
-    val savedPermMult  = MutableStateFlow(10.0)
-    val savedNearMult  = MutableStateFlow(10.0)
+    val savedPermMult  = MutableStateFlow(0.0)
+    val savedNearMult  = MutableStateFlow(0.0)
 
-    fun saveMultipliers(exact: Double, tuwt: Double, near: Double = tuwt, batch: Int = currentBatch.value) {
+    fun saveMultipliers(exact: Double = 80.0, tuwt: Double = 0.0, near: Double = 0.0, batch: Int = currentBatch.value) {
         if (batch == currentBatch.value) {
             savedExactMult.value = exact
-            savedPermMult.value  = tuwt
-            savedNearMult.value  = near
+            savedPermMult.value  = 0.0
+            savedNearMult.value  = 0.0
         }
         prefs.edit()
             .putFloat("exactMult_$batch", exact.toFloat())
-            .putFloat("permMult_$batch",  tuwt.toFloat())
-            .putFloat("nearMult_$batch",  near.toFloat())
+            .putFloat("permMult_$batch",  0f)
+            .putFloat("nearMult_$batch",  0f)
             .apply()
     }
 
@@ -309,8 +309,8 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
 
     fun getMultipliersForBatch(batch: Int): Triple<Double, Double, Double> = Triple(
         prefs.getFloat("exactMult_$batch", 80f).toDouble(),
-        prefs.getFloat("permMult_$batch",  10f).toDouble(),
-        prefs.getFloat("nearMult_$batch",  10f).toDouble()
+        0.0,
+        0.0
     )
 
     // ── Per-customer per-batch paid amount (persisted) ────────────────────────

@@ -24,7 +24,7 @@ object GitHubUpdater {
     suspend fun checkForUpdates(owner: String, repo: String): UpdateInfo? = withContext(Dispatchers.IO) {
         // 1. First attempt: Cloudflare Worker / Firebase RTDB (unthrottled, fast edge)
         try {
-            val workerUrl = URL("https://3d-scraper-worker.khaingkhantkyaw001.workers.dev/api/app/latest")
+            val workerUrl = URL("https://2d-scraper-worker.khaingkhantkyaw001.workers.dev/api/app/latest")
             val conn = workerUrl.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.connectTimeout = 6000
