@@ -242,9 +242,9 @@ function App() {
     }
     const password = e.target.password?.value || '';
 
-    // Authorized check: Only khaingkhantkyaw001@gmail.com
+    // Authorized check: Only authorized administrator
     if (email.toLowerCase() !== 'khaingkhantkyaw001@gmail.com') {
-      setLoginError('Access Denied: Only authorized administrator (khaingkhantkyaw001@gmail.com) is permitted.');
+      setLoginError('အကောင့် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည် (Invalid credentials)');
       setLoggingIn(false);
       return;
     }
@@ -981,8 +981,8 @@ function App() {
               <input
                 name="email"
                 type="email"
-                placeholder="khaingkhantkyaw001@gmail.com"
-                autoComplete="username"
+                placeholder=""
+                autoComplete="off"
                 required
               />
             </div>
@@ -991,8 +991,8 @@ function App() {
               <input
                 name="password"
                 type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
+                placeholder=""
+                autoComplete="off"
                 required
               />
             </div>

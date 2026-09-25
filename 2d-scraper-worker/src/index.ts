@@ -303,7 +303,7 @@ export default {
         if (email !== 'khaingkhantkyaw001@gmail.com' || password !== 'Khant1234@') {
           return new Response(JSON.stringify({
             success: false,
-            error: 'Access Denied: Only authorized administrator (khaingkhantkyaw001@gmail.com) is permitted.'
+            error: 'အကောင့် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည် (Invalid credentials)'
           }), { status: 401, headers: corsHeaders });
         }
 
