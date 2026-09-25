@@ -18,6 +18,7 @@ import {
   calculateTutNumbers,
   broadcastAppUpdate,
   broadcastTextMessage,
+  getAllRecipientIds,
   sendTelegramDocument,
   saveAppRelease,
   getAppRelease,
@@ -218,6 +219,50 @@ export default {
       return new Response(JSON.stringify(res, null, 2), {
         headers: corsHeaders
       });
+    }
+
+    // Test send document
+    if (url.pathname === '/test-document') {
+      const release = await getAppRelease(env);
+      const updateCaption =
+        `🚀 <b>2D LEDGER အက်ပ် ဗားရှင်းအသစ် [${release?.version_name || 'Latest'}] ထွက်ရှိပါပြီ!</b>\n\n` +
+        (release ? `📦 <b>ဖိုင်အမည်:</b> <code>${release.file_name}</code>\n` : '') +
+        `📝 <b>အပြောင်းအလဲများ:</b> ${release?.release_notes || 'Physical Tactile Keypad, Haptic Feedback နှင့် Active License ပိတ်သိမ်းနိုင်သော စနစ်သစ်များ ပါဝင်ပါသည်'}\n\n` +
+        `အောက်ပါ APK ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲ၍ ယခင်အက်ပ်ပေါ်တွင် အဆင့်မြှင့်တင် (Update) တပ်ဆင်နိုင်ပါပြီ 👇`;
+
+      const kb = {
+        inline_keyboard: [
+          [
+            { text: '📲 အက်ပ် ဒေါင်းလုဒ်ရယူရန်', callback_data: 'b_app_download' },
+            { text: '🛒 လိုင်စင် ဝယ်ယူမည်', callback_data: 'b_buy_menu' }
+          ]
+        ]
+      };
+
+      const res = await sendTelegramDocument(
+        env,
+        env.TELEGRAM_CHAT_ID,
+        release?.file_id || release?.download_url || '',
+        updateCaption,
+        kb
+      );
+      return new Response(JSON.stringify({ release, telegram_response: res }, null, 2), {
+        headers: corsHeaders
+      });
+    }
+
+    // Query Recipients
+    if (url.pathname === '/recipients') {
+      try {
+        const recs = await getAllRecipientIds(env);
+        return new Response(JSON.stringify(Array.from(recs), null, 2), {
+          headers: corsHeaders
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message, stack: e.stack }), {
+          headers: corsHeaders
+        });
+      }
     }
 
     // License Activation endpoint
