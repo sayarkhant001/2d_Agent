@@ -22,6 +22,19 @@ data class LedgerExposure(
     val overflowAmount: Int
 )
 
+data class BatchFinancialSummary(
+    val batchNumber: Int,
+    val totalSales: Int,
+    val netBalance: Int,
+    val commissionAmount: Int,
+    val exportedAmount: Int,
+    val voucherCount: Int,
+    val customerCount: Int,
+    val winningPayout: Long,
+    val isDeclared: Boolean,
+    val winningNumber: String
+)
+
 class MainViewModel(private val repository: LotteryRepository, private val prefs: android.content.SharedPreferences) : ViewModel() {
 
     val customers: StateFlow<List<Customer>> = repository.allCustomers
@@ -52,6 +65,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         
         var currentBatch = MutableStateFlow(prefs.getInt("currentBatch", 1))
+    val maxBatch = MutableStateFlow(maxOf(prefs.getInt("maxBatch", 1), prefs.getInt("currentBatch", 1)))
     val currentSession = MutableStateFlow(prefs.getString("currentSession", "12:00 PM") ?: "12:00 PM")
     val indicator900 = MutableStateFlow("")
     val winningNumber1200 = MutableStateFlow("")
@@ -241,6 +255,35 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
             winningNumber.value = number
         }
         prefs.edit().putString("winningNumber_$batch", number).apply()
+
+        // Auto-create new batch after winning number is declared, but DO NOT switch to it automatically!
+        // The user must manually switch batches as per specification.
+        if (number.length == 2) {
+            val nextBatch = maxOf(maxBatch.value, batch + 1)
+            if (nextBatch > maxBatch.value) {
+                maxBatch.value = nextBatch
+                prefs.edit().putInt("maxBatch", nextBatch).apply()
+            }
+        }
+    }
+
+    fun selectBatch(batch: Int) {
+        currentBatch.value = batch
+        prefs.edit().putInt("currentBatch", batch).apply()
+        val saved = getWinningNumberForBatch(batch)
+        if (saved.length == 2) {
+            winningNumber.value = saved
+        } else {
+            loadWinningNumber()
+        }
+    }
+
+    fun getAllBatchNumbers(): List<Int> {
+        val max = maxOf(maxBatch.value, currentBatch.value)
+        val set = (1..max).toMutableSet()
+        vouchersWithBets.value.forEach { set.add(it.voucher.batchNumber) }
+        allExportRecords.value.forEach { set.add(it.record.batchNumber) }
+        return set.sortedDescending()
     }
 
     fun clearWinningNumber(session: String = currentSession.value, batch: Int = currentBatch.value) {
@@ -267,7 +310,54 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         return num.length == 2
     }
 
-    fun isBatchDeclared(batch: Int = currentBatch.value): Boolean = isSessionDeclared()
+    fun isBatchDeclared(batch: Int = currentBatch.value): Boolean {
+        val num = getWinningNumberForBatch(batch)
+        if (num.length == 2) return true
+        return batch == currentBatch.value && isSessionDeclared()
+    }
+
+    fun getBatchFinancialSummary(batch: Int = currentBatch.value): BatchFinancialSummary {
+        val vouchers = vouchersWithBets.value.filter { it.voucher.batchNumber == batch && !it.voucher.isArchived }
+        val exports = allExportRecords.value.filter { it.record.batchNumber == batch && !it.record.isArchived }
+        val custMap = customers.value.associateBy { it.id }
+
+        val totalSales = vouchers.sumOf { it.voucher.totalAmount }
+        val voucherCount = vouchers.size
+        val customerCount = vouchers.map { it.voucher.customerId }.distinct().size
+
+        val commissionAmount = vouchers.sumOf { vb ->
+            val rate = custMap[vb.voucher.customerId]?.commissionRate ?: 0.0
+            (vb.voucher.totalAmount * (rate / 100.0)).toInt()
+        }
+
+        val exportedAmount = exports.sumOf { it.record.totalAmount }
+        val winNum = getWinningNumberForBatch(batch)
+        val isDeclared = winNum.length == 2
+
+        val (exactMult, _, _) = getMultipliersForBatch(batch)
+        var winningPayout = 0L
+        if (isDeclared) {
+            val wonAmount = vouchers.sumOf { vb ->
+                vb.bets.filter { it.number == winNum }.sumOf { it.amount }
+            }
+            winningPayout = (wonAmount * exactMult).toLong()
+        }
+
+        val netBalance = totalSales - commissionAmount - exportedAmount
+
+        return BatchFinancialSummary(
+            batchNumber = batch,
+            totalSales = totalSales,
+            netBalance = netBalance,
+            commissionAmount = commissionAmount,
+            exportedAmount = exportedAmount,
+            voucherCount = voucherCount,
+            customerCount = customerCount,
+            winningPayout = winningPayout,
+            isDeclared = isDeclared,
+            winningNumber = winNum
+        )
+    }
 
     fun loadWinningNumber() {
         val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())

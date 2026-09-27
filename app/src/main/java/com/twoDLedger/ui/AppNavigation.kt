@@ -127,7 +127,8 @@ fun AppNavigation(
                 onNavigateToReceipt = { navController.navigate(ReceiptRoute) },
                 onNavigateToArchive = { navController.navigate(ArchiveRoute) },
                 onNavigateToOverflow = { navController.navigate(OverflowRoute) },
-                onNavigateToSettings = { navController.navigate(SettingsRoute) }
+                onNavigateToSettings = { navController.navigate(SettingsRoute) },
+                onNavigateToResult = { batchNum -> navController.navigate(CommissionerResultRoute(batchNum)) }
             )
         }
         composable<CustomersRoute> {

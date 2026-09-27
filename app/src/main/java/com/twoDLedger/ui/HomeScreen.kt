@@ -1,39 +1,28 @@
 package com.twoDLedger.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import com.twoDLedger.logic.LicenseManager
-import com.twoDLedger.logic.TwoDMarketCalendar
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,29 +30,34 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twoDLedger.R
+import com.twoDLedger.logic.LicenseManager
+import com.twoDLedger.logic.TwoDMarketCalendar
 import com.twoDLedger.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-data class MenuItem(
+data class GridMenuItem(
+    val id: String,
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
     val iconColors: List<Color>,
+    val isLocked: Boolean = false,
     val onClick: () -> Unit
 )
 
@@ -79,19 +73,28 @@ fun HomeScreen(
     onNavigateToReceipt: () -> Unit,
     onNavigateToArchive: () -> Unit,
     onNavigateToOverflow: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToResult: (Int) -> Unit = {}
 ) {
-    val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-    val currentDate = dateFormat.format(Date())
+    val dateFormat = SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH)
+    val currentDateStr = remember { dateFormat.format(Date()) }
     val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
+    val maxBatch by viewModel.maxBatch.collectAsStateWithLifecycle()
+    val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()
     val bannedNumbers by viewModel.bannedNumbers.collectAsStateWithLifecycle()
     val liveHoliday by viewModel.liveHoliday.collectAsStateWithLifecycle()
     val winningHistory by viewModel.winningHistory.collectAsStateWithLifecycle()
+    val vouchersWithBets by viewModel.vouchersWithBets.collectAsStateWithLifecycle()
+    val allExportRecords by viewModel.allExportRecords.collectAsStateWithLifecycle()
+    val customers by viewModel.customers.collectAsStateWithLifecycle()
+    val winningNumber by viewModel.winningNumber.collectAsStateWithLifecycle()
+
     var showMarketCalendarDialog by remember { mutableStateOf(false) }
+    var showBatchDropdown by remember { mutableStateOf(false) }
     val todayMarket = remember(liveHoliday) { TwoDMarketCalendar.getTodayOverview(liveHoliday) }
     val haptic = LocalHapticFeedback.current
     val rDimens = rememberResponsiveDimens()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val licenseManager = remember { LicenseManager(context) }
     var showLicenseDetailsDialog by remember { mutableStateOf(false) }
     var licenseDetails by remember { mutableStateOf(licenseManager.getLicenseDetails()) }
@@ -99,6 +102,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         licenseManager.syncServerTime()
         licenseDetails = licenseManager.getLicenseDetails()
+        viewModel.fetchLive2D()
     }
 
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
@@ -113,34 +117,68 @@ fun HomeScreen(
         }
     }
 
-    // Strictly ordered: 4 Core Modules with cohesive, elegant FinTech accents
-    val menuItems = listOf(
-        MenuItem(
+    // Dynamic Financial Summary for the currently displayed batch (Modified Order)
+    val stats = remember(currentBatch, vouchersWithBets, allExportRecords, customers, winningNumber) {
+        viewModel.getBatchFinancialSummary(currentBatch)
+    }
+
+    val isBatchLocked = stats.isDeclared
+
+    // All available batch numbers
+    val availableBatches = remember(currentBatch, maxBatch, vouchersWithBets, allExportRecords) {
+        viewModel.getAllBatchNumbers()
+    }
+
+    // 6 Main Primary Grid Action Buttons (Inspired by 2D Ledger Prime, beautifully stylized)
+    val mainGridItems = listOf(
+        GridMenuItem(
+            id = "customers",
             title = "ကော်မရှင်",
             subtitle = "စာရင်းသွင်းသူများ",
             icon = Icons.Default.People,
             iconColors = listOf(Color(0xFF0284C7), Color(0xFF0369A1)),
             onClick = onNavigateToCustomers
         ),
-        MenuItem(
+        GridMenuItem(
+            id = "ledger",
             title = "ဂဏန်းများ",
-            subtitle = "ပေါက်ဂဏန်း စစ်ဆေးချက်",
+            subtitle = "စာရင်းချုပ် / ပေါက်စစ်",
             icon = Icons.AutoMirrored.Filled.List,
             iconColors = listOf(Color(0xFF2563EB), Color(0xFF1D4ED8)),
             onClick = onNavigateToLedger
         ),
-        MenuItem(
+        GridMenuItem(
+            id = "vouchers",
             title = "ဘောင်ချာ",
             subtitle = "ရောင်းရငွေ ဘောင်ချာများ",
             icon = Icons.Default.Receipt,
             iconColors = listOf(Color(0xFFD97706), Color(0xFFB45309)),
             onClick = onNavigateToVouchers
         ),
-        MenuItem(
-            title = "တင်ကွက်များ",
+        GridMenuItem(
+            id = "betting",
+            title = "တင်ကွက်",
+            subtitle = "ထိုးကြေး စာရင်းသွင်းမည်",
+            icon = Icons.Default.Add,
+            iconColors = listOf(Color(0xFF10B981), Color(0xFF059669)),
+            isLocked = isBatchLocked,
+            onClick = onNavigateToBetting
+        ),
+        GridMenuItem(
+            id = "result_format2",
+            title = "ဂဏန်းများ (ပုံစံ ၂)",
+            subtitle = "ဒိုင်ချုပ် ရှင်းတမ်း အစီရင်ခံစာ",
+            icon = Icons.Default.Assessment,
+            iconColors = listOf(Color(0xFF8B5CF6), Color(0xFF6D28D9)),
+            onClick = { onNavigateToResult(currentBatch) }
+        ),
+        GridMenuItem(
+            id = "overflow_format2",
+            title = "တင်ကွက် (ပုံစံ ၂)",
             subtitle = "အထက်ဒိုင် တင်ကွက်",
             icon = Icons.Default.Payment,
-            iconColors = listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)),
+            iconColors = listOf(Color(0xFF6366F1), Color(0xFF4338CA)),
+            isLocked = isBatchLocked,
             onClick = onNavigateToOverflow
         )
     )
@@ -180,7 +218,7 @@ fun HomeScreen(
                                 )
                             }
                             Text(
-                                text = currentDate,
+                                text = "2D Ledger Prime Edition",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
@@ -189,7 +227,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    // 2D Market Calendar Button
+                    // Calendar Button
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -204,6 +242,7 @@ fun HomeScreen(
                         )
                     }
 
+                    // Winner Screen Button
                     Surface(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -211,13 +250,12 @@ fun HomeScreen(
                         },
                         shape = RoundedCornerShape(20.dp),
                         color = Color(0xFFFEF3C7),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A).copy(alpha = 0.8f)),
-                        modifier = Modifier.padding(end = 12.dp)
+                        border = BorderStroke(1.dp, Color(0xFFFDE68A).copy(alpha = 0.8f))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.EmojiEvents,
@@ -233,6 +271,21 @@ fun HomeScreen(
                             )
                         }
                     }
+
+                    // Settings Button
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onNavigateToSettings()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
@@ -240,23 +293,27 @@ fun HomeScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .widthIn(max = 800.dp)
-                    .padding(padding)
-                    .padding(horizontal = 18.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // ── 2D Session Selector: 12:00 PM vs 4:30 PM ─────────────────
-                val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()
+                // ── 1. AM and PM Distinct Section Tabs ─────────────────────────────
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -265,7 +322,7 @@ fun HomeScreen(
                             .padding(4.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        // 12:00 PM (Noon)
+                        // AM Section (12:00 PM)
                         val isNoon = currentSession == "12:00 PM"
                         val noonBg by animateColorAsState(
                             targetValue = if (isNoon) CobaltPrimary else Color.Transparent,
@@ -282,12 +339,12 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 10.dp),
+                                modifier = Modifier.padding(vertical = 9.dp),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "☀️ နေ့လယ် ၁၂:၀၀",
+                                    text = "☀️ မနက်ပိုင်း (၁၂:၀၀)",
                                     fontSize = 13.5.sp,
                                     fontWeight = if (isNoon) FontWeight.ExtraBold else FontWeight.Medium,
                                     color = if (isNoon) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
@@ -295,7 +352,7 @@ fun HomeScreen(
                             }
                         }
 
-                        // 4:30 PM (Evening)
+                        // PM Section (4:30 PM)
                         val isEvening = currentSession == "4:30 PM"
                         val eveningBg by animateColorAsState(
                             targetValue = if (isEvening) CobaltPrimary else Color.Transparent,
@@ -312,12 +369,12 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 10.dp),
+                                modifier = Modifier.padding(vertical = 9.dp),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "🌙 ညနေ ၄:၃၀",
+                                    text = "🌙 ညနေပိုင်း (၄:၃၀)",
                                     fontSize = 13.5.sp,
                                     fontWeight = if (isEvening) FontWeight.ExtraBold else FontWeight.Medium,
                                     color = if (isEvening) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
@@ -329,16 +386,12 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // ── Live Thailand SET Index & 2D Ticker ───────────────────────
+                // ── 2. Live Thai SET Index & Ticker ────────────────────────────────
                 val liveData by viewModel.live2DData.collectAsStateWithLifecycle()
                 val n9 by viewModel.indicator900.collectAsStateWithLifecycle()
                 val n12 by viewModel.winningNumber1200.collectAsStateWithLifecycle()
                 val n14 by viewModel.indicator1400.collectAsStateWithLifecycle()
                 val n16 by viewModel.winningNumber1630.collectAsStateWithLifecycle()
-
-                LaunchedEffect(Unit) {
-                    viewModel.fetchLive2D()
-                }
 
                 Card(
                     onClick = {
@@ -348,9 +401,9 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                         val infiniteTransition = rememberInfiniteTransition(label = "livePulse")
                         val pulseScale by infiniteTransition.animateFloat(
                             initialValue = 0.85f,
@@ -379,7 +432,7 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Box(
                                     modifier = Modifier
-                                        .size(9.dp)
+                                        .size(8.dp)
                                         .graphicsLayer {
                                             scaleX = pulseScale
                                             scaleY = pulseScale
@@ -389,7 +442,7 @@ fun HomeScreen(
                                         .background(Color(0xFF10B981))
                                 )
                                 Text(
-                                    text = "🇹🇭 Thai 2D Live",
+                                    text = "🇹🇭 Thai 2D Live Market",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -417,338 +470,349 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // ── 2D Market Status & Interactive Calendar Card ───────────────────
-                val myanmarDayOfWeek = remember {
-                    val cal = java.util.Calendar.getInstance()
-                    when (cal.get(java.util.Calendar.DAY_OF_WEEK)) {
-                        java.util.Calendar.MONDAY -> "တနင်္လာနေ့"
-                        java.util.Calendar.TUESDAY -> "အင်္ဂါနေ့"
-                        java.util.Calendar.WEDNESDAY -> "ဗုဒ္ဓဟူးနေ့"
-                        java.util.Calendar.THURSDAY -> "ကြာသပတေးနေ့"
-                        java.util.Calendar.FRIDAY -> "သောကြာနေ့"
-                        java.util.Calendar.SATURDAY -> "စနေနေ့"
-                        java.util.Calendar.SUNDAY -> "တနင်္ဂနွေနေ့"
-                        else -> "ရုံးဖွင့်ရက်"
-                    }
-                }
-
+                // ── 3. Upper Part Details (Stats Grid) - Displayed by Default in Modified Order ──
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .shadow(2.dp, RoundedCornerShape(18.dp)),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(18.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (todayMarket.isOpen) Color(0xFF86EFAC).copy(alpha = 0.6f) else Color(0xFFFECACA).copy(alpha = 0.6f)
-                    )
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
                             .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Section Header: Batch Indicator & Declaration Tag
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            Text(
+                                text = "📊 ပွဲစဉ် #${currentBatch} ရှင်းတမ်း အနှစ်ချုပ်",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = CobaltPrimary
+                            )
+                            if (stats.isDeclared) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFFEE2E2),
+                                    border = BorderStroke(1.dp, Color(0xFFFCA5A5))
                                 ) {
                                     Text(
-                                        text = myanmarDayOfWeek,
-                                        style = MaterialTheme.typography.titleMedium,
+                                        text = "🏆 ပေါက်: ${stats.winningNumber}",
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Black,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 16.sp
+                                        color = Color(0xFFB91C1C),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                     )
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = if (todayMarket.isOpen) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
-                                        border = BorderStroke(1.dp, if (todayMarket.isOpen) Color(0xFF86EFAC) else Color(0xFFFECACA))
-                                    ) {
-                                        Text(
-                                            text = if (todayMarket.isOpen) "🟢 ဈေးကွက်ဖွင့်သည်" else "🔴 ဈေးကွက်ပိတ်သည်",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp,
-                                            color = if (todayMarket.isOpen) Color(0xFF15803D) else Color(0xFFB91C1C),
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                        )
-                                    }
                                 }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = todayMarket.reason,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.5.sp
-                                )
+                            } else {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFDCFCE7),
+                                    border = BorderStroke(1.dp, Color(0xFF86EFAC))
+                                ) {
+                                    Text(
+                                        text = "🟢 ဖွင့်လှစ်ဆဲ",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF15803D),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
+                        }
 
-                            // Calendar Trigger Button
+                        // Row 1: The Core Figures - Total Sales & Net Balance
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BatchStatItem(
+                                modifier = Modifier.weight(1f),
+                                label = "အရောင်းကြေး",
+                                value = "%,d Ks".format(stats.totalSales),
+                                icon = Icons.Default.AccountBalanceWallet,
+                                accentColor = CobaltPrimary
+                            )
+                            BatchStatItem(
+                                modifier = Modifier.weight(1f),
+                                label = "ကျန်ရှိငွေ",
+                                value = "%,d Ks".format(stats.netBalance),
+                                icon = Icons.Default.AccountBalance,
+                                accentColor = Color(0xFF059669)
+                            )
+                        }
+
+                        // Row 2: Deductions & Outflow - Commission & Export / Winning Payout
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BatchStatItem(
+                                modifier = Modifier.weight(1f),
+                                label = "ကော်မရှင်ခ",
+                                value = "%,d Ks".format(stats.commissionAmount),
+                                icon = Icons.Default.Percent,
+                                accentColor = Color(0xFFD97706)
+                            )
+                            BatchStatItem(
+                                modifier = Modifier.weight(1f),
+                                label = if (stats.isDeclared) "ပေါက်သီး လျော်ငွေ" else "တင်ကွက်ငွေ",
+                                value = "%,d Ks".format(if (stats.isDeclared) stats.winningPayout else stats.exportedAmount.toLong()),
+                                icon = if (stats.isDeclared) Icons.Default.EmojiEvents else Icons.Default.Payment,
+                                accentColor = if (stats.isDeclared) Color(0xFFDC2626) else Color(0xFF7C3AED)
+                            )
+                        }
+
+                        // Row 3: Operational Counts - Vouchers & Bettors
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            BatchStatItem(
+                                modifier = Modifier.weight(1f),
+                                label = "ဘောင်ချာများ (အားလုံး)",
+                                value = "%,d စောင်".format(stats.voucherCount),
+                                icon = Icons.Default.Receipt,
+                                accentColor = Color(0xFF0891B2)
+                            )
+                            BatchStatItem(
+                                modifier = Modifier.weight(1f),
+                                label = "ထိုးသား ဦးရေ",
+                                value = "%,d ဦး".format(stats.customerCount),
+                                icon = Icons.Default.People,
+                                accentColor = Color(0xFF4F46E5)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // ── 4. Date and Batch Number Selection Dropdown Bar ────────────────
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Current Date Display
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = CobaltPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = currentDateStr,
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        // Interactive Batch Selector Dropdown Pill
+                        Box {
                             Surface(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    showMarketCalendarDialog = true
+                                    showBatchDropdown = true
                                 },
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(20.dp),
                                 color = CobaltLight,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f))
+                                border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.4f))
                             ) {
                                 Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = CobaltPrimary, modifier = Modifier.size(14.dp))
                                     Text(
-                                        text = "ပြက္ခဒိန်",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        text = "ပွဲစဉ် $currentBatch",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.ExtraBold,
                                         color = CobaltPrimary
                                     )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // ── Hero Action Card: "ထိုးကြေး စာရင်းသွင်းမည်" (Direct Betting Entry) ────
-                val heroInteractionSource = remember { MutableInteractionSource() }
-                val heroIsPressed by heroInteractionSource.collectIsPressedAsState()
-                val heroScale by animateFloatAsState(
-                    targetValue = if (heroIsPressed) 0.96f else 1.0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                    label = "heroScale"
-                )
-
-                Card(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onNavigateToBetting()
-                    },
-                    interactionSource = heroInteractionSource,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            scaleX = heroScale
-                            scaleY = heroScale
-                        }
-                        .shadow(if (heroIsPressed) 2.dp else 6.dp, RoundedCornerShape(20.dp)),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = CobaltPrimary)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color(0xFF1D4ED8),
-                                        Color(0xFF0284C7)
-                                    )
-                                )
-                            )
-                            .padding(horizontal = 18.dp, vertical = 14.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(46.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
                                     Icon(
-                                        Icons.Default.Calculate,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(26.dp)
-                                    )
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "ထိုးကြေး စာရင်းသွင်းမည်",
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = rDimens.responsiveSp(16f),
-                                        color = Color.White,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        "ကီးပက်ဖြင့် အမြန် စာရင်းသွင်းရန် နှိပ်ပါ",
-                                        fontSize = rDimens.responsiveSp(11.5f),
-                                        color = Color.White.copy(alpha = 0.85f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = "Dropdown",
+                                        tint = CobaltPrimary,
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = Color(0xFFFFD93D),
-                                modifier = Modifier.size(20.dp)
-                            )
+
+                            DropdownMenu(
+                                expanded = showBatchDropdown,
+                                onDismissRequest = { showBatchDropdown = false },
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                            ) {
+                                availableBatches.forEach { b ->
+                                    val win = viewModel.getWinningNumberForBatch(b)
+                                    val isDecl = win.length == 2
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Text(
+                                                    text = "ပွဲစဉ် (Batch) #$b",
+                                                    fontWeight = if (b == currentBatch) FontWeight.Black else FontWeight.Medium,
+                                                    fontSize = 14.sp,
+                                                    color = if (b == currentBatch) CobaltPrimary else MaterialTheme.colorScheme.onSurface
+                                                )
+                                                if (isDecl) {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = Color(0xFFFEE2E2),
+                                                        border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                                    ) {
+                                                        Text(
+                                                            text = "🏆 $win",
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFFB91C1C),
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+                                                } else {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = Color(0xFFDCFCE7),
+                                                        border = BorderStroke(1.dp, Color(0xFF86EFAC))
+                                                    ) {
+                                                        Text(
+                                                            text = "🟢 ဖွင့်လှစ်ဆဲ",
+                                                            fontSize = 10.5.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFF15803D),
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            if (b == currentBatch) {
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = "Selected",
+                                                    tint = CobaltPrimary,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            viewModel.selectBatch(b)
+                                            showBatchDropdown = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
 
                 if (bannedNumbers.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+                            .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f), RoundedCornerShape(14.dp)),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier.size(36.dp).background(MaterialTheme.colorScheme.error, CircleShape),
+                                modifier = Modifier.size(30.dp).background(MaterialTheme.colorScheme.error, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Info, contentDescription = "Alert", tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Info, contentDescription = "Alert", tint = MaterialTheme.colorScheme.onError, modifier = Modifier.size(16.dp))
                             }
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
                                     text = "ပိတ်ထားသော ဂဏန်းများ",
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 12.sp
+                                    fontSize = 11.5.sp
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = bannedNumbers.joinToString(", ") {
                                         if (it.amountLimit > 0) "${it.number} (≤%,d Ks)".format(it.amountLimit)
                                         else "${it.number} (လုံးဝပိတ်)"
                                     },
                                     color = MaterialTheme.colorScheme.error,
-                                    fontSize = 13.5.sp,
+                                    fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = FontFamily.Monospace
                                 )
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(14.dp))
-                }
-
-                // ── 2x2 Grid Menu with Tactile Medallion Cards ─────────────────
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxWidth().weight(1f)
-                ) {
-                    items(menuItems) { item ->
-                        MenuCard(
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            icon = item.icon,
-                            iconColors = item.iconColors,
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                item.onClick()
-                            }
-                        )
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // ── Settings & Preferences Navigation Card ───────────────────
-                val settingsInteractionSource = remember { MutableInteractionSource() }
-                val settingsIsPressed by settingsInteractionSource.collectIsPressedAsState()
-                val settingsScale by animateFloatAsState(
-                    targetValue = if (settingsIsPressed) 0.96f else 1.0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                    label = "settingsScale"
-                )
-
-                Card(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onNavigateToSettings()
-                    },
-                    interactionSource = settingsInteractionSource,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            scaleX = settingsScale
-                            scaleY = settingsScale
-                        }
-                        .shadow(if (settingsIsPressed) 1.dp else 2.dp, RoundedCornerShape(18.dp)),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                // ── 5. The 6 Main Action Buttons Grid (Inspired by 2D Ledger Prime in our Design) ──
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = "Settings",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                    val chunkedItems = mainGridItems.chunked(2)
+                    chunkedItems.forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            rowItems.forEach { item ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    MenuCard(
+                                        title = item.title,
+                                        subtitle = item.subtitle,
+                                        icon = item.icon,
+                                        iconColors = item.iconColors,
+                                        isLocked = item.isLocked,
+                                        onClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            item.onClick()
+                                        }
+                                    )
+                                }
                             }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    "ဆက်တင်နှင့် အချက်အလက်",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    "လိုင်စင်၊ စကားဝှက်၊ အရန်သိမ်းဆည်းမှု စီမံရန်",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            if (rowItems.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
 
@@ -781,20 +845,79 @@ fun HomeScreen(
     }
 }
 
-// ── Tactile Pro Medallion Menu Card ──────────────────────────────────────────
+// ── Financial Stat Item Component ────────────────────────────────────────────
+@Composable
+fun BatchStatItem(
+    modifier: Modifier = Modifier,
+    label: String,
+    value: String,
+    icon: ImageVector,
+    accentColor: Color
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(accentColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = accentColor,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = value,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+// ── Tactile Pro Medallion Menu Card with Lock Status ───────────────────────────
 @Composable
 fun MenuCard(
     title: String,
     subtitle: String,
     icon: ImageVector,
     iconColors: List<Color>,
+    isLocked: Boolean = false,
     onClick: () -> Unit
 ) {
     val rDimens = rememberResponsiveDimens()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.93f else 1.0f,
+        targetValue = if (isPressed) 0.94f else 1.0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
         label = "menuCardScale"
     )
@@ -804,49 +927,79 @@ fun MenuCard(
         interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = if (rDimens.isCompact) 112.dp else 124.dp)
+            .heightIn(min = if (rDimens.isCompact) 104.dp else 114.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .shadow(if (isPressed) 1.dp else 3.dp, RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        border = androidx.compose.foundation.BorderStroke(
+            .shadow(if (isPressed) 1.dp else 3.dp, RoundedCornerShape(18.dp)),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
             1.dp,
-            if (isPressed) CobaltPrimary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            if (isLocked) Color(0xFFFCA5A5).copy(alpha = 0.8f)
+            else if (isPressed) CobaltPrimary.copy(alpha = 0.6f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(rDimens.responsiveDp(14f)),
+                .padding(rDimens.responsiveDp(13f)),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.Start
         ) {
-            // Gradient Icon Medallion
-            Box(
-                modifier = Modifier
-                    .size(if (rDimens.isCompact) 40.dp else 44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Brush.linearGradient(colors = iconColors)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    modifier = Modifier.size(if (rDimens.isCompact) 20.dp else 22.dp),
-                    tint = Color.White
-                )
+                // Gradient Icon Medallion
+                Box(
+                    modifier = Modifier
+                        .size(if (rDimens.isCompact) 36.dp else 40.dp)
+                        .clip(RoundedCornerShape(11.dp))
+                        .background(Brush.linearGradient(colors = if (isLocked) listOf(Color(0xFF94A3B8), Color(0xFF64748B)) else iconColors)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        modifier = Modifier.size(if (rDimens.isCompact) 18.dp else 20.dp),
+                        tint = Color.White
+                    )
+                }
+
+                if (isLocked) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFFEE2E2),
+                        border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(11.dp))
+                            Text(
+                                text = "ပိတ်ပါပြီ",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFB91C1C)
+                            )
+                        }
+                    }
+                }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = title,
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = rDimens.responsiveSp(15.5f),
+                    fontSize = rDimens.responsiveSp(15.sp.value),
                     color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 0.2.sp,
                     maxLines = 1,
@@ -855,7 +1008,7 @@ fun MenuCard(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    fontSize = rDimens.responsiveSp(11f),
+                    fontSize = rDimens.responsiveSp(11.sp.value),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -865,8 +1018,6 @@ fun MenuCard(
         }
     }
 }
-
-
 
 @Composable
 fun LiveMiniSlot(modifier: Modifier = Modifier, time: String, value: String, isWin: Boolean) {

@@ -68,6 +68,10 @@ fun BettingScreen(
     val customers by viewModel.customers.collectAsStateWithLifecycle()
     val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
     val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()
+    val winningNumberForBatch = remember(currentBatch, currentSession) {
+        viewModel.getWinningNumberForBatch(currentBatch)
+    }
+    val isWonDeclared = winningNumberForBatch.length == 2 || viewModel.isBatchDeclared(currentBatch)
 
     var selectedCustomer by remember { mutableStateOf<Int?>(initialCustomerId) }
     var expandedCustomer by remember { mutableStateOf(false) }
@@ -151,6 +155,10 @@ fun BettingScreen(
     }
 
     fun addBets(numbers: List<String>) {
+        if (isWonDeclared) {
+            android.widget.Toast.makeText(context, "ပေါက်ဂဏန်း ထွက်ပြီးပါပြီ။ ထိုးကြေးတင်၍ မရတော့ပါ။", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         val amount = tempAmount.toIntOrNull() ?: 1000
         if (amount <= 0 || numbers.isEmpty()) return
 
@@ -350,6 +358,10 @@ fun BettingScreen(
     }
 
     fun addBetsFromPasteAsync(text: String) {
+        if (isWonDeclared) {
+            android.widget.Toast.makeText(context, "ပေါက်ဂဏန်း ထွက်ပြီးပါပြီ။ ထိုးကြေးတင်၍ မရတော့ပါ။", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         val validation = TwoDBetParser.validatePastedText(text)
         if (!validation.isValid) {
             pasteErrors = validation.errors
@@ -392,6 +404,10 @@ fun BettingScreen(
     }
 
     fun submitVoucher() {
+        if (isWonDeclared) {
+            android.widget.Toast.makeText(context, "ပေါက်ဂဏန်း ထွက်ပြီးပါပြီ။ ထိုးကြေးတင်၍ မရတော့ပါ။", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         if (selectedCustomer == null) {
             expandedCustomer = true
             android.widget.Toast.makeText(context, "ထိုးသူ ရွေးချယ်ပေးပါ", android.widget.Toast.LENGTH_SHORT).show()
@@ -480,6 +496,44 @@ fun BettingScreen(
                     tint = BettingOnPrimaryContainer,
                     modifier = Modifier.size(28.dp)
                 )
+            }
+        }
+
+        // --- WINNING DECLARED LOCK BANNER ---
+        if (isWonDeclared) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFFEE2E2),
+                border = BorderStroke(1.dp, Color(0xFFF87171))
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = Color(0xFFDC2626),
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "ပေါက်ဂဏန်း (${if (winningNumberForBatch.length == 2) winningNumberForBatch else viewModel.winningNumber.value}) ထွက်ပြီးပါပြီ။ ဤပွဲစဉ်တွင် ထိုးကြေးတင်၍ မရတော့ပါ။",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 13.sp,
+                            color = Color(0xFFB91C1C)
+                        )
+                        Text(
+                            text = "Winning number is declared. You cannot place bets in this batch.",
+                            fontSize = 11.sp,
+                            color = Color(0xFF991B1B)
+                        )
+                    }
+                }
             }
         }
 

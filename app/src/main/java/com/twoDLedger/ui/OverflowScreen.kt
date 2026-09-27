@@ -1,6 +1,7 @@
 package com.twoDLedger.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -62,7 +64,7 @@ fun OverflowScreen(
     val batchWinningNumber = remember(currentBatch, winningNumber) { 
         viewModel.getWinningNumberForBatch(currentBatch) 
     }
-    val isWonDeclared = batchWinningNumber.length == 2
+    val isWonDeclared = batchWinningNumber.length == 2 || viewModel.isBatchDeclared(currentBatch)
     val (exactMult, permMult, nearMult) = remember(currentBatch) { 
         viewModel.getMultipliersForBatch(currentBatch) 
     }
@@ -404,6 +406,10 @@ fun OverflowScreen(
                 }
                 Button(
                     onClick = {
+                        if (isWonDeclared) {
+                            android.widget.Toast.makeText(context, "ပေါက်ဂဏန်း ထွက်ပြီးပါပြီ။ အထက်ဒိုင်သို့ တင်ပို့၍ မရတော့ပါ။", android.widget.Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         if (overflowExposures.isNotEmpty()) {
                             val items = overflowExposures.map { it.number to it.overflowAmount }
                             val total = overflowExposures.sumOf { it.overflowAmount }
@@ -413,20 +419,60 @@ fun OverflowScreen(
                             }
                         }
                     },
+                    enabled = !isWonDeclared && overflowExposures.isNotEmpty(),
                     modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (overflowExposures.isNotEmpty()) blueColor else MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = if (!isWonDeclared && overflowExposures.isNotEmpty()) blueColor else MaterialTheme.colorScheme.surfaceVariant,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = MaterialTheme.shapes.small
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
+                    Icon(if (isWonDeclared) Icons.Default.Lock else Icons.Default.Add, contentDescription = null, tint = if (!isWonDeclared && overflowExposures.isNotEmpty()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(8.dp))
-                    Text("တင်မည်", color = MaterialTheme.colorScheme.onPrimary)
+                    Text(if (isWonDeclared) "တင်ပို့၍မရပါ" else "တင်မည်", color = if (!isWonDeclared && overflowExposures.isNotEmpty()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            // Winning Declared Warning Banner
+            if (isWonDeclared) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFEE2E2),
+                    border = BorderStroke(1.dp, Color(0xFFF87171))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "ပေါက်ဂဏန်း ထွက်ပြီးပါပြီ။ အထက်ဒိုင်သို့ တင်ပို့၍ မရတော့ပါ။",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 13.sp,
+                                color = Color(0xFFB91C1C)
+                            )
+                            Text(
+                                text = "Winning number is declared. You cannot send to upper agent.",
+                                fontSize = 11.sp,
+                                color = Color(0xFF991B1B)
+                            )
+                        }
+                    }
+                }
+            }
+
             // Header
             Row(
                 modifier = Modifier
