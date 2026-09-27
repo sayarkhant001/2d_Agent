@@ -87,13 +87,13 @@ fun ExportHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("တင်ကွက် မှတ်တမ်း", color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("တင်ကွက် မှတ်တမ်း", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {

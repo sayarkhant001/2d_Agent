@@ -205,16 +205,16 @@ fun CommissionerResultScreen(
             TopAppBar(
                 title = { 
                     Column {
-                        Text("ကော်မရှင်ဆိုင်ရာ ရလဒ်", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("၂ လုံးထီ ရှင်းတမ်း", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f), fontSize = 11.sp)
+                        Text("ကော်မရှင်ဆိုင်ရာ ရလဒ်", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("၂ လုံးထီ ရှင်းတမ်း", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = ResPrimary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
@@ -222,7 +222,7 @@ fun CommissionerResultScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(ResMintBg)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Page header banner
             Surface(

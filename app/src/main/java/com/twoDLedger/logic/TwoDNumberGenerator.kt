@@ -4,8 +4,9 @@ object TwoDNumberGenerator {
     // ထိပ် (Head/Prefix): 10 numbers starting with d (e.g. 2 -> 20, 21, ..., 29)
     fun head(d: Int): List<String> = (0..9).map { "$d$it" }
 
-    // နောက် (Tail/Suffix): 10 numbers ending with d (e.g. 5 -> 05, 15, ..., 95)
+    // ပိတ် / နောက် (Tail/Ending): 10 numbers ending with d (e.g. 5 -> 05, 15, ..., 95)
     fun tail(d: Int): List<String> = (0..9).map { "$it$d" }
+    fun close(d: Int): List<String> = tail(d)
 
     // အပူး (Doubles/Twins): 10 numbers (00, 11, 22, ..., 99)
     fun doubleNumbers(): List<String> = (0..9).map { "$it$it" }

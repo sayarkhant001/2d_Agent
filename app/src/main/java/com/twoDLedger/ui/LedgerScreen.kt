@@ -85,20 +85,20 @@ fun LedgerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("ဂဏန်းများ စာရင်း", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text(if (isAfterMode) "ပေါက်သီး (ဒဲ့) တိုက်စစ်ချက်" else "ထိုးထားသော ဂဏန်းများ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
+                        Text("ဂဏန်းများ စာရင်း", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(if (isAfterMode) "ပေါက်သီး (ဒဲ့) တိုက်စစ်ချက်" else "ထိုးထားသော ဂဏန်းများ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 actions = {
                     if (isAfterMode) {
                         TextButton(
                             onClick = onNavigateToResult,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimary)
+                            colors = ButtonDefaults.textButtonColors(contentColor = CobaltPrimary)
                         ) {
                             Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
@@ -106,7 +106,7 @@ fun LedgerScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->

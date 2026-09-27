@@ -11,7 +11,14 @@ import java.util.concurrent.TimeUnit
 data class TwoDLiveResponse(
     val serverTime: String = "",
     val live: TwoDLiveItem? = null,
-    val result: List<TwoDResultItem> = emptyList()
+    val result: List<TwoDResultItem> = emptyList(),
+    val holiday: TwoDHolidayItem? = null
+)
+
+data class TwoDHolidayItem(
+    val status: String = "",
+    val date: String = "",
+    val name: String = ""
 )
 
 data class TwoDLiveItem(
@@ -88,10 +95,21 @@ object TwoDApiClient {
                 }
             }
 
+            var holidayItem: TwoDHolidayItem? = null
+            if (json.has("holiday") && !json.isNull("holiday")) {
+                val hj = json.getJSONObject("holiday")
+                holidayItem = TwoDHolidayItem(
+                    status = hj.optString("status", ""),
+                    date = hj.optString("date", ""),
+                    name = hj.optString("name", "")
+                )
+            }
+
             TwoDLiveResponse(
                 serverTime = json.optString("server_time", ""),
                 live = liveItem,
-                result = results
+                result = results,
+                holiday = holidayItem
             )
         }
     }

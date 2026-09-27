@@ -58,6 +58,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
     val indicator1400 = MutableStateFlow("")
     val winningNumber1630 = MutableStateFlow("")
     val live2DData = MutableStateFlow<com.twoDLedger.network.TwoDLiveItem?>(null)
+    val liveHoliday = MutableStateFlow<com.twoDLedger.network.TwoDHolidayItem?>(null)
     val isFetchingLive = MutableStateFlow(false)
     val isFetchingHistory = MutableStateFlow(false)
     val winningHistory = repository.winningHistory
@@ -110,6 +111,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
     private suspend fun fetchLive2DDirect() {
         val resp = com.twoDLedger.network.TwoDApiClient.getLive()
         live2DData.value = resp.live
+        liveHoliday.value = resp.holiday
         resp.result.forEach { item ->
             when {
                 item.openTime.startsWith("09") || item.openTime.startsWith("11") -> {

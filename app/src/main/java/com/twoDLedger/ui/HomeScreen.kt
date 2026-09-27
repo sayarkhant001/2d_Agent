@@ -1,6 +1,7 @@
 package com.twoDLedger.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -25,6 +27,8 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import com.twoDLedger.logic.LicenseManager
+import com.twoDLedger.logic.TwoDMarketCalendar
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -81,9 +85,22 @@ fun HomeScreen(
     val currentDate = dateFormat.format(Date())
     val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
     val bannedNumbers by viewModel.bannedNumbers.collectAsStateWithLifecycle()
+    val liveHoliday by viewModel.liveHoliday.collectAsStateWithLifecycle()
+    val winningHistory by viewModel.winningHistory.collectAsStateWithLifecycle()
+    var showMarketCalendarDialog by remember { mutableStateOf(false) }
+    val todayMarket = remember(liveHoliday) { TwoDMarketCalendar.getTodayOverview(liveHoliday) }
     val haptic = LocalHapticFeedback.current
     val rDimens = rememberResponsiveDimens()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val licenseManager = remember { LicenseManager(context) }
+    var showLicenseDetailsDialog by remember { mutableStateOf(false) }
+    var licenseDetails by remember { mutableStateOf(licenseManager.getLicenseDetails()) }
+
+    LaunchedEffect(Unit) {
+        licenseManager.syncServerTime()
+        licenseDetails = licenseManager.getLicenseDetails()
+    }
+
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
     BackHandler {
@@ -143,7 +160,7 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .border(1.dp, Color(0xFFD4AF37).copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                .border(1.dp, CobaltPrimary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
                         )
                         Column {
                             Row(
@@ -157,18 +174,10 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.onBackground,
                                     letterSpacing = 0.3.sp
                                 )
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
-                                ) {
-                                    Text(
-                                        text = "PRO",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                    )
-                                }
+                                LicenseStatusBadge(
+                                    licenseDetails = licenseDetails,
+                                    onClick = { showLicenseDetailsDialog = true }
+                                )
                             }
                             Text(
                                 text = currentDate,
@@ -180,6 +189,21 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    // 2D Market Calendar Button
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            showMarketCalendarDialog = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "2D Calendar",
+                            tint = CobaltPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
                     Surface(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -395,7 +419,7 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // ── 2D Weekday & Fast Recheck / Calculation Header Card ─────────
+                // ── 2D Market Status & Interactive Calendar Card ───────────────────
                 val myanmarDayOfWeek = remember {
                     val cal = java.util.Calendar.getInstance()
                     when (cal.get(java.util.Calendar.DAY_OF_WEEK)) {
@@ -404,8 +428,8 @@ fun HomeScreen(
                         java.util.Calendar.WEDNESDAY -> "ဗုဒ္ဓဟူးနေ့"
                         java.util.Calendar.THURSDAY -> "ကြာသပတေးနေ့"
                         java.util.Calendar.FRIDAY -> "သောကြာနေ့"
-                        java.util.Calendar.SATURDAY -> "စနေနေ့ (ပိတ်ရက်)"
-                        java.util.Calendar.SUNDAY -> "တနင်္ဂနွေနေ့ (ပိတ်ရက်)"
+                        java.util.Calendar.SATURDAY -> "စနေနေ့"
+                        java.util.Calendar.SUNDAY -> "တနင်္ဂနွေနေ့"
                         else -> "ရုံးဖွင့်ရက်"
                     }
                 }
@@ -413,70 +437,82 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(3.dp, RoundedCornerShape(18.dp)),
+                        .shadow(2.dp, RoundedCornerShape(18.dp)),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(18.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (todayMarket.isOpen) Color(0xFF86EFAC).copy(alpha = 0.6f) else Color(0xFFFECACA).copy(alpha = 0.6f)
+                    )
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .padding(horizontal = 16.dp, vertical = 12.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .fillMaxWidth()
                     ) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = myanmarDayOfWeek,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = CobaltPrimary,
-                                    fontSize = 16.sp
-                                )
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (currentSession == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = if (currentSession == "12:00 PM") "နေ့လယ်ပိုင်း စာရင်း" else "ညနေပိုင်း စာရင်း",
+                                        text = myanmarDayOfWeek,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 16.sp
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (todayMarket.isOpen) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
+                                        border = BorderStroke(1.dp, if (todayMarket.isOpen) Color(0xFF86EFAC) else Color(0xFFFECACA))
+                                    ) {
+                                        Text(
+                                            text = if (todayMarket.isOpen) "🟢 ဈေးကွက်ဖွင့်သည်" else "🔴 ဈေးကွက်ပိတ်သည်",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = if (todayMarket.isOpen) Color(0xFF15803D) else Color(0xFFB91C1C),
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = todayMarket.reason,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 11.5.sp
+                                )
+                            }
+
+                            // Calendar Trigger Button
+                            Surface(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    showMarketCalendarDialog = true
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                color = CobaltLight,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f))
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                                ) {
+                                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = CobaltPrimary, modifier = Modifier.size(14.dp))
+                                    Text(
+                                        text = "ပြက္ခဒိန်",
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = if (currentSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        color = CobaltPrimary
                                     )
                                 }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "ရုံးဖွင့်ရက် (တနင်္လာ - သောကြာ) ၂ ကြိမ် စာရင်းတွက်ချက်မှု",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp
-                            )
-                        }
-
-                        // Fast Recheck Action Button
-                        Surface(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onNavigateToLedger()
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            color = CobaltLight,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f))
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                            ) {
-                                Text(
-                                    text = "📊 ပြန်စစ်",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = CobaltPrimary
-                                )
                             }
                         }
                     }
@@ -714,6 +750,33 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
             }
+        }
+
+        if (showMarketCalendarDialog) {
+            TwoDMarketCalendarDialog(
+                apiHoliday = liveHoliday,
+                winningHistoryList = winningHistory,
+                onDismissRequest = { showMarketCalendarDialog = false }
+            )
+        }
+
+        if (showLicenseDetailsDialog) {
+            LicenseDetailsDialog(
+                licenseManager = licenseManager,
+                onDismiss = {
+                    showLicenseDetailsDialog = false
+                    licenseDetails = licenseManager.getLicenseDetails()
+                }
+            )
+        }
+
+        if (licenseDetails.isClockTampered) {
+            ClockTamperedBlockDialog(
+                licenseManager = licenseManager,
+                onRestored = {
+                    licenseDetails = licenseManager.getLicenseDetails()
+                }
+            )
         }
     }
 }

@@ -106,21 +106,21 @@ fun VouchersScreen(
                             text = "2D ဘောင်ချာများ စာရင်း",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "ရောင်းရငွေနှင့် ထိုးကြေး ပြေစာများ ပြန်လည်စစ်ဆေးရန်",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         containerColor = MaterialTheme.colorScheme.background

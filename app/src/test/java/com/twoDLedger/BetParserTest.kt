@@ -2,9 +2,6 @@ package com.twoDLedger
 
 import com.twoDLedger.logic.TwoDBetParser
 import com.twoDLedger.logic.TwoDNumberGenerator
-import com.twoDLedger.ui.validateAndParseLine
-import com.twoDLedger.ui.validatePastedText
-import com.twoDLedger.ui.LineParseResult
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -30,6 +27,30 @@ class BetParserTest {
         val l4 = TwoDBetParser.parseLine("77R=1000")
         assertEquals(1, l4.size)
         assertEquals("77" to 1000, l4[0])
+
+        // Delimiter with * and x
+        val l5 = TwoDBetParser.parseLine("12*500")
+        assertEquals(1, l5.size)
+        assertEquals("12" to 500, l5[0])
+
+        // Delimiter with x
+        val l6 = TwoDBetParser.parseLine("34x1000")
+        assertEquals(1, l6.size)
+        assertEquals("34" to 1000, l6[0])
+
+        // Reversal with ပြန်
+        val l7 = TwoDBetParser.parseLine("23ပြန်=500")
+        assertEquals(2, l7.size)
+        assertEquals("23" to 500, l7[0])
+        assertEquals("32" to 500, l7[1])
+
+        // Multiple numbers with global R or ပြန်
+        val l8 = TwoDBetParser.parseLine("12 34 R 500")
+        assertEquals(4, l8.size)
+        assertTrue(l8.contains("12" to 500))
+        assertTrue(l8.contains("21" to 500))
+        assertTrue(l8.contains("34" to 500))
+        assertTrue(l8.contains("43" to 500))
     }
 
     @Test
@@ -48,11 +69,17 @@ class BetParserTest {
         assertTrue(head.all { it.second == 500 })
         assertTrue(head.map { it.first }.containsAll(listOf("20", "21", "22", "29")))
 
-        // Tail (နောက်)
-        val tail = TwoDBetParser.parseLine("5နောက် 500")
-        assertEquals(10, tail.size)
-        assertTrue(tail.all { it.second == 500 })
-        assertTrue(tail.map { it.first }.containsAll(listOf("05", "15", "25", "95")))
+        // Tail (ပိတ်)
+        val peik = TwoDBetParser.parseLine("5ပိတ် 500")
+        assertEquals(10, peik.size)
+        assertTrue(peik.all { it.second == 500 })
+        assertTrue(peik.map { it.first }.containsAll(listOf("05", "15", "25", "95")))
+
+        // Tail (နောက် - legacy backwards compatibility)
+        val nauk = TwoDBetParser.parseLine("5နောက် 500")
+        assertEquals(10, nauk.size)
+        assertTrue(nauk.all { it.second == 500 })
+        assertTrue(nauk.map { it.first }.containsAll(listOf("05", "15", "25", "95")))
 
         // Doubles (အပူး)
         val doubles = TwoDBetParser.parseLine("အပူး 1000")
@@ -79,6 +106,14 @@ class BetParserTest {
         // Odd-Odd (မမ)
         val oo = TwoDBetParser.parseLine("မမ 200")
         assertEquals(25, oo.size)
+
+        // Roll (ပတ်)
+        val roll = TwoDBetParser.parseLine("7ပတ် 500")
+        assertEquals(19, roll.size)
+
+        // Break (ဘရိတ်)
+        val brk = TwoDBetParser.parseLine("5ဘရိတ် 1000")
+        assertEquals(10, brk.size)
     }
 
     @Test
@@ -86,9 +121,12 @@ class BetParserTest {
         val validText = """
             12-34 = 1000
             23R = 500
+            5ပိတ် 200
             5နောက် 200
+            7ထိပ် = 500
+            အပူး 1000
         """.trimIndent()
-        val result = validatePastedText(validText)
+        val result = TwoDBetParser.validatePastedText(validText)
         assertTrue(result.isValid)
         assertTrue(result.errors.isEmpty())
         assertTrue(result.validBets.isNotEmpty())
@@ -97,8 +135,10 @@ class BetParserTest {
             123 = 1000
             xyz = 500
         """.trimIndent()
-        val badResult = validatePastedText(invalidText)
+        val badResult = TwoDBetParser.validatePastedText(invalidText)
         assertFalse(badResult.isValid)
-        assertTrue(badResult.errors.isNotEmpty())
+        assertEquals(2, badResult.errors.size)
+        assertEquals(1, badResult.errors[0].lineNumber)
+        assertEquals(2, badResult.errors[1].lineNumber)
     }
 }

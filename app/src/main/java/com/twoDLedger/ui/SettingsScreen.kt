@@ -83,18 +83,18 @@ fun SettingsScreen(
                 title = {
                     Column {
                         Text("ဆက်တင်", fontWeight = FontWeight.Bold, fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onPrimary)
+                            color = MaterialTheme.colorScheme.onBackground)
                         Text("2D Ledger App", fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f))
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimary)
+                            tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->

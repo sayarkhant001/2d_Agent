@@ -381,13 +381,13 @@ fun OverflowScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("တင်ကွက်များ", color = MaterialTheme.colorScheme.onPrimary) },
+                title = { Text("တင်ကွက်များ", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = blueColor)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         bottomBar = {

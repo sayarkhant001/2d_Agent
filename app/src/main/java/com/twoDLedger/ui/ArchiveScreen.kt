@@ -40,19 +40,19 @@ fun ArchiveScreen(
                 title = {
                     Column {
                         Text("မှတ်တမ်းဟောင်းများ", fontWeight = FontWeight.Bold, fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onPrimary)
+                            color = MaterialTheme.colorScheme.onBackground)
                         Text("${batches.size} batch archived", fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f))
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimary)
+                            tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }

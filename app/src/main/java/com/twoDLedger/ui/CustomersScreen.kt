@@ -117,16 +117,17 @@ fun CustomersScreen(
                 containerColor = MaterialTheme.colorScheme.background,
                 topBar = {
                     Surface(
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.background,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .statusBarsPadding()
-                                .padding(bottom = 12.dp)
+                                .padding(bottom = 10.dp)
                         ) {
-                            // Header Row: Arrow, Title, Batch
+                            // Header Row: Arrow, Title, Session Chip
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -137,42 +138,43 @@ fun CustomersScreen(
                                     Icon(
                                         Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = "Back",
-                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        tint = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
                                 Spacer(Modifier.width(4.dp))
                                 Text(
                                     "ကော်မရှင်များ",
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 19.sp,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                                     modifier = Modifier.padding(end = 14.dp)
                                 ) {
                                     Text(
                                         if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
-                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        color = CobaltPrimary,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 13.5.sp,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                     )
                                 }
                             }
 
-                            // Embedded White Pill Search Bar
+                            // Embedded Minimalist Search Bar
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 14.dp, vertical = 2.dp)
-                                    .height(44.dp),
-                                shape = RoundedCornerShape(22.dp),
+                                    .height(42.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.surface,
-                                shadowElevation = 1.dp
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                             ) {
                                 Row(
                                     modifier = Modifier

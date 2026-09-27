@@ -173,26 +173,26 @@ fun WinnerScreen(
                             text = "ပေါက်သီး စာရင်း (2D)",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryGold
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "2D ပေါက်ဂဏန်း • $selectedSession",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = PrimaryGold)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 actions = {
                     FilledTonalButton(
                         onClick = onNavigateToHistory,
                         colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = SlateSurfaceVariant,
-                            contentColor = PrimaryGold
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = CobaltPrimary
                         ),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         modifier = Modifier.padding(end = 6.dp)
@@ -206,16 +206,16 @@ fun WinnerScreen(
                         enabled = !isFetchingLive
                     ) {
                         if (isFetchingLive) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = PrimaryGold, strokeWidth = 2.dp)
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = CobaltPrimary, strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Default.Refresh, contentDescription = "Refresh Live", tint = PrimaryGold)
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh Live", tint = CobaltPrimary)
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SlateDarkBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
-        containerColor = SlateBackground
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -462,12 +462,12 @@ fun WinnerScreen(
                                 },
                                 modifier = Modifier.weight(1.5f),
                                 enabled = winningNumber.length == 2,
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGold),
+                                colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SlateDarkBackground, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("ပေါက်သီးတွက်ချက်မည်", color = SlateDarkBackground, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("ပေါက်သီးတွက်ချက်မည်", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
 
                             if (isDeclared) {
@@ -497,8 +497,8 @@ fun WinnerScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = SlateDarkBackground),
-                        border = BorderStroke(1.5.dp, PrimaryGold.copy(alpha = 0.5f))
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.4f))
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Row(
@@ -511,12 +511,12 @@ fun WinnerScreen(
                                         text = "ပေါက်ဂဏန်း: $winningNumber (${selectedSession})",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
-                                        color = PrimaryGold
+                                        color = CobaltPrimary
                                     )
                                     Text(
                                         text = "စုစုပေါင်း ပေါက်ကွက် ${results.size} ကွက်",
                                         fontSize = 12.sp,
-                                        color = TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
