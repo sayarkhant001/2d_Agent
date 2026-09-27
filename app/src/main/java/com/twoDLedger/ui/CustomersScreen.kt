@@ -434,35 +434,20 @@ fun CustomerCard(
                     }
                 }
 
-                // Action 1: "ထိုးမည်" (Quick Bet shortcut)
+                // Action: "ထိုးမည်" (Prominent Quick Bet shortcut, isolated to prevent accidental clicks)
                 FilledTonalButton(
                     onClick = onAddBetTap,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier.height(32.dp)
+                    modifier = Modifier.height(36.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(2.dp))
-                    Text("ထိုးမည်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
-                }
-
-                Spacer(Modifier.width(4.dp))
-
-                // Action 2: Edit customer
-                IconButton(
-                    onClick = onEditTap,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "ပြင်ဆင်မည်",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(17.dp)
-                    )
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("ထိုးမည်", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             }
 
@@ -487,7 +472,9 @@ fun CustomerCard(
                         "စုစုပေါင်း",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -497,6 +484,7 @@ fun CustomerCard(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 1,
+                        softWrap = false,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -510,7 +498,9 @@ fun CustomerCard(
                         "ကော်မရှင်",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -520,6 +510,7 @@ fun CustomerCard(
                         color = GoldAccent,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 1,
+                        softWrap = false,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -533,7 +524,9 @@ fun CustomerCard(
                         "နုတ်ပြီးငွေ",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -543,12 +536,13 @@ fun CustomerCard(
                         color = MaterialTheme.colorScheme.primary,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 1,
+                        softWrap = false,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            // ── FOOTER ROW: Vouchers & Paid summary + Navigation Cue ───────────
+            // ── FOOTER ROW: Vouchers & Paid summary + Edit action + Navigation Cue ───────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -569,7 +563,9 @@ fun CustomerCard(
                         "ဘောင်ချာ : $voucherCount စောင်",
                         fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        softWrap = false
                     )
                     if (customer.paidAmount > 0) {
                         Text("•", fontSize = 10.sp, color = MaterialTheme.colorScheme.outlineVariant)
@@ -577,28 +573,64 @@ fun CustomerCard(
                             "ပေးငွေ : %,d ကျပ်".format(customer.paidAmount.toInt()),
                             fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
 
-                // Right: Clear navigation cue
+                // Right: Edit action (moved safely here) + Navigation cue
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        "ဘောင်ချာများ ကြည့်ရန်",
-                        fontSize = 11.5.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Icon(
-                        Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    Surface(
+                        onClick = onEditTap,
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "ပြင်ဆင်မည်",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                "ပြင်မည်",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            "ဘောင်ချာများ ကြည့်ရန်",
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
             }
         }

@@ -143,7 +143,13 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         val resp = com.twoDLedger.network.TwoDApiClient.getLive()
         live2DData.value = resp.live
         liveHoliday.value = resp.holiday
+        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
         resp.result.forEach { item ->
+            // Only accept results matching today's date so past round numbers are never misfetched
+            val isToday = item.stockDate.isBlank() || item.stockDate == todayStr
+            if (!isToday) return@forEach
+
             when {
                 item.openTime.startsWith("09") || item.openTime.startsWith("11") -> {
                     if (item.twod.isNotBlank() && item.twod != "--") indicator900.value = item.twod
@@ -151,7 +157,6 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
                 item.openTime.startsWith("12") -> {
                     if (item.twod.isNotBlank() && item.twod != "--") {
                         winningNumber1200.value = item.twod
-                        saveWinningNumber(item.twod, "12:00 PM")
                     }
                 }
                 item.openTime.startsWith("14") || item.openTime.startsWith("15") -> {
@@ -160,7 +165,6 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
                 item.openTime.startsWith("16") -> {
                     if (item.twod.isNotBlank() && item.twod != "--") {
                         winningNumber1630.value = item.twod
-                        saveWinningNumber(item.twod, "4:30 PM")
                     }
                 }
             }

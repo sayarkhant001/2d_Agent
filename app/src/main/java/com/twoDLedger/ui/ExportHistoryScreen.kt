@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -321,27 +322,20 @@ private fun ExportRecordCard(
     val sortedNumbers = export.numbers.sortedByDescending { it.amount }
 
     val voucherDate = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date(export.record.timestamp))
+    val voucherSerialStr = if (export.record.voucherSerial > 0) "#${export.record.voucherSerial}" else "#${export.record.id}"
+    val dineLabel = if (export.record.dineName.isNotBlank()) export.record.dineName else "ဒိုင်"
     val voucherText = buildString {
-        appendLine("      တင်ကွက် ဘောင်ချာ    ")
-        if (export.record.dineName.isNotBlank()) {
-            appendLine(" ဒိုင်      : ${export.record.dineName}")
-            appendLine(" ဘောင်ချာ : အမှတ် #${export.record.voucherSerial}")
-        } else {
-            appendLine(" ဘောင်ချာ : #${export.record.id}")
-        }
-        appendLine(" အချိန်     : ${export.record.session}")
-        appendLine(" နေ့စွဲ     : $voucherDate")
+        appendLine("တင်ကွက် ဘောင်ချာ    ")
+        appendLine(" ဘောင်ချာ : $voucherSerialStr")
+        appendLine(" အကြိမ်   : ${export.record.batchNumber}")
+        appendLine(" အချိန်   : $voucherDate")
         appendLine("------------------------")
         sortedNumbers.forEachIndexed { idx, num ->
             appendLine(" ${idx + 1}. ${num.number} = ${num.amount}")
         }
         appendLine("------------------------")
         appendLine(" စုစုပေါင်း : %,d ကျပ်".format(export.record.totalAmount))
-        if (export.record.dineName.isNotBlank()) {
-            appendLine("   * ဒိုင် (${export.record.dineName}) သို့ တင်ကွက် *  ")
-        } else {
-            appendLine("   * ဒိုင် တင်ကွက် *  ")
-        }
+        appendLine("   * $dineLabel တင်ကွက် *  ")
     }
 
     Card(
@@ -374,6 +368,9 @@ private fun ExportRecordCard(
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.5.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                             )
                         }
@@ -382,7 +379,9 @@ private fun ExportRecordCard(
                             "အချိန်: ${export.record.session}",
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                             fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                     Spacer(Modifier.height(2.dp))
@@ -398,7 +397,9 @@ private fun ExportRecordCard(
                             dateString,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                             fontSize = 9.5.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -410,12 +411,16 @@ private fun ExportRecordCard(
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Black,
                             fontSize = 14.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false
                         )
                         Text(
                             "${sortedNumbers.size} ဂဏန်း",
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                            fontSize = 9.5.sp
+                            fontSize = 9.5.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                     Spacer(Modifier.width(6.dp))
@@ -525,14 +530,18 @@ private fun ExportRecordCard(
                             "စုစုပေါင်း (${sortedNumbers.size} ဂဏန်း)",
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 10.5.sp
+                            fontSize = 10.5.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
                         Text(
                             "%,d ကျပ်".format(export.record.totalAmount),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,11 +69,13 @@ fun WinnerScreen(
     var multiplierText by remember { mutableStateOf("80") }
 
     val liveData by viewModel.live2DData.collectAsStateWithLifecycle()
+    val liveHoliday by viewModel.liveHoliday.collectAsStateWithLifecycle()
     val isFetchingLive by viewModel.isFetchingLive.collectAsStateWithLifecycle()
     val ind900 by viewModel.indicator900.collectAsStateWithLifecycle()
     val win1200 by viewModel.winningNumber1200.collectAsStateWithLifecycle()
     val ind1400 by viewModel.indicator1400.collectAsStateWithLifecycle()
     val win1630 by viewModel.winningNumber1630.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val allBets by viewModel.allBets.collectAsStateWithLifecycle()
     val allVWB by viewModel.vouchersWithBets.collectAsStateWithLifecycle()
@@ -87,6 +90,7 @@ fun WinnerScreen(
 
     var isDeclared by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
+    var showRealtimeLiveDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
     var results by remember { mutableStateOf<List<WinnerResult>>(emptyList()) }
@@ -97,6 +101,34 @@ fun WinnerScreen(
             showClearDialog = false
         } else {
             onNavigateBack()
+        }
+    }
+
+    // Start background live polling while on WinnerScreen
+    LaunchedEffect(Unit) {
+        viewModel.startLivePolling()
+    }
+
+    // Fast polling while real-time live dialog is open
+    LaunchedEffect(showRealtimeLiveDialog) {
+        if (showRealtimeLiveDialog) {
+            while (showRealtimeLiveDialog) {
+                try {
+                    viewModel.fetchLive2D()
+                } catch (_: Exception) {}
+                kotlinx.coroutines.delay(2500L)
+            }
+        }
+    }
+
+    // When finalized winning number arrives from live feed, auto-fill but DO NOT auto-calculate
+    LaunchedEffect(win1200, win1630, selectedSession) {
+        val finalNum = if (selectedSession == "12:00 PM") win1200 else win1630
+        val b = targetBatch.toIntOrNull() ?: currentBatch
+        val saved = viewModel.getWinningNumberForBatch(b)
+        if (saved.length != 2 && finalNum.isNotBlank() && finalNum.length == 2 && finalNum != "--" && winningNumber != finalNum && !isDeclared) {
+            winningNumber = finalNum
+            Toast.makeText(context, "တိုက်ရိုက် ပေါက်ဂဏန်း ($finalNum) ရရှိပါပြီ။ ပေါက်သီးတွက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -163,14 +195,14 @@ fun WinnerScreen(
             runCalculation(saved, multiplierText, selectedSession)
         } else {
             val sessionLive = if (selectedSession == "12:00 PM") win1200 else win1630
-            if (sessionLive.isNotBlank() && sessionLive.length == 2) {
+            if (sessionLive.isNotBlank() && sessionLive.length == 2 && sessionLive != "--") {
                 winningNumber = sessionLive
             } else {
                 winningNumber = ""
-                isDeclared = false
-                results = emptyList()
-                overflowResults = emptyList()
             }
+            isDeclared = false
+            results = emptyList()
+            overflowResults = emptyList()
         }
     }
 
@@ -277,24 +309,59 @@ fun WinnerScreen(
                                             alpha = pulseAlpha
                                         }
                                         .clip(CircleShape)
-                                        .background(CobaltPrimary)
+                                        .background(Color(0xFFDC2626))
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "ထိုင်း 2D တိုက်ရိုက်",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
-                                    color = TextPrimary
+                                    color = TextPrimary,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
-                            liveData?.let {
-                                Text(
-                                    text = "အညွှန်း: ${it.set} | တန်ဖိုး: ${it.value}",
-                                    fontSize = 11.sp,
-                                    color = TextSecondary,
-                                    fontFamily = FontFamily.Monospace
+                            FilledTonalButton(
+                                onClick = { showRealtimeLiveDialog = true },
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = Color(0xFFFEE2E2),
+                                    contentColor = Color(0xFFDC2626)
+                                ),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFDC2626))
                                 )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("တိုက်ရိုက် ကြည့်မည် 🔴", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             }
+                        }
+
+                        if (liveData != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "အညွှန်း: ${liveData?.set} | တန်ဖိုး: ${liveData?.value} | အချိန်: ${liveData?.time}",
+                                fontSize = 10.5.sp,
+                                color = TextSecondary,
+                                fontFamily = FontFamily.Monospace,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        } else if (liveHoliday != null && liveHoliday?.name?.isNotBlank() == true) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "📢 ယနေ့ ဈေးကွက် ပိတ်ရက်ဖြစ်ပါသည် (${liveHoliday?.name})",
+                                fontSize = 10.5.sp,
+                                color = Color(0xFFD97706),
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
@@ -322,7 +389,7 @@ fun WinnerScreen(
                                     if (win1200.isNotBlank() && win1200 != "--") {
                                         selectedSession = "12:00 PM"
                                         winningNumber = win1200
-                                        runCalculation(win1200, multiplierText, "12:00 PM")
+                                        Toast.makeText(context, "ပေါက်ဂဏန်း ($win1200) ရွေးချယ်ပြီးပါပြီ။ တွက်ချက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             )
@@ -346,7 +413,7 @@ fun WinnerScreen(
                                     if (win1630.isNotBlank() && win1630 != "--") {
                                         selectedSession = "4:30 PM"
                                         winningNumber = win1630
-                                        runCalculation(win1630, multiplierText, "4:30 PM")
+                                        Toast.makeText(context, "ပေါက်ဂဏန်း ($win1630) ရွေးချယ်ပြီးပါပြီ။ တွက်ချက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             )
@@ -477,7 +544,7 @@ fun WinnerScreen(
                             ) {
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("ပေါက်သီးတွက်ချက်မည်", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, softWrap = false)
                             }
 
                             if (isDeclared) {
@@ -490,7 +557,7 @@ fun WinnerScreen(
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("ပြန်ဖျက်", fontSize = 12.sp)
+                                    Text("ပြန်ဖျက်", fontSize = 12.sp, maxLines = 1, softWrap = false)
                                 }
                             }
                         }
@@ -764,6 +831,277 @@ fun WinnerScreen(
             }
         )
     }
+
+    if (showRealtimeLiveDialog) {
+        TwoDRealtimeLiveDialog(
+            liveData = liveData,
+            holiday = liveHoliday,
+            win1200 = win1200,
+            win1630 = win1630,
+            selectedSession = selectedSession,
+            onSelectNumber = { num ->
+                winningNumber = num
+                showRealtimeLiveDialog = false
+                Toast.makeText(context, "ပေါက်ဂဏန်း ($num) ထည့်သွင်းပြီးပါပြီ။ တွက်ချက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { showRealtimeLiveDialog = false }
+        )
+    }
+}
+
+@Composable
+fun TwoDRealtimeLiveDialog(
+    liveData: com.twoDLedger.network.TwoDLiveItem?,
+    holiday: com.twoDLedger.network.TwoDHolidayItem?,
+    win1200: String,
+    win1630: String,
+    selectedSession: String,
+    onSelectNumber: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "dialogLivePulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1.30f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "dialogLivePulseScale"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .graphicsLayer {
+                                scaleX = pulseScale
+                                scaleY = pulseScale
+                            }
+                            .clip(CircleShape)
+                            .background(Color(0xFFDC2626))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "ထိုင်း 2D တိုက်ရိုက် ကြည့်ရှုမှု",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFFEE2E2)
+                ) {
+                    Text(
+                        "● LIVE",
+                        color = Color(0xFFDC2626),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (holiday != null && holiday.name.isNotBlank()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFFEF3C7),
+                        border = BorderStroke(1.dp, Color(0xFFF59E0B))
+                    ) {
+                        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFB45309), modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "ယနေ့ ဈေးကွက် ပိတ်ရက်ဖြစ်ပါသည် (${holiday.name})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFB45309),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                // Big Real-time Live Box
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = SlateDarkBackground,
+                    border = BorderStroke(1.5.dp, CobaltPrimary.copy(alpha = 0.6f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "တိုက်ရိုက် ဂဏန်း",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryGold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = if (liveData != null && liveData.twod.isNotBlank()) liveData.twod else "--",
+                            fontSize = 52.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace,
+                            color = Color(0xFFFFD54F)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        if (liveData != null) {
+                            Text(
+                                text = "SET: ${liveData.set}  |  VALUE: ${liveData.value}",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = TextSecondary,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                            Text(
+                                text = "အချိန်: ${liveData.time}",
+                                fontSize = 10.5.sp,
+                                color = TextMuted,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        } else {
+                            Text(
+                                text = "ပေါက်ဂဏန်း စောင့်ဆိုင်းနေဆဲ...",
+                                fontSize = 11.5.sp,
+                                color = TextMuted,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            )
+                        }
+                    }
+                }
+
+                // Official Draw Results Row
+                Text(
+                    "တရားဝင် ပေါက်သီး အခြေအနေ",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 12:00 PM Card
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, if (selectedSession == "12:00 PM") CobaltPrimary else MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("၁၂:၀၀ မွန်းတည့်", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextSecondary, maxLines = 1, softWrap = false)
+                            Text(
+                                text = win1200.ifBlank { "--" },
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontFamily = FontFamily.Monospace,
+                                color = if (win1200.length == 2 && win1200 != "--") Color(0xFF10B981) else TextMuted
+                            )
+                            if (win1200.length == 2 && win1200 != "--") {
+                                Spacer(Modifier.height(4.dp))
+                                Button(
+                                    onClick = { onSelectNumber(win1200) },
+                                    modifier = Modifier.height(26.dp),
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary)
+                                ) {
+                                    Text("ရွေးမည်", fontSize = 10.sp, maxLines = 1, softWrap = false)
+                                }
+                            }
+                        }
+                    }
+
+                    // 4:30 PM Card
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, if (selectedSession == "4:30 PM") CobaltPrimary else MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("၄:၃၀ ညနေ", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextSecondary, maxLines = 1, softWrap = false)
+                            Text(
+                                text = win1630.ifBlank { "--" },
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontFamily = FontFamily.Monospace,
+                                color = if (win1630.length == 2 && win1630 != "--") Color(0xFF10B981) else TextMuted
+                            )
+                            if (win1630.length == 2 && win1630 != "--") {
+                                Spacer(Modifier.height(4.dp))
+                                Button(
+                                    onClick = { onSelectNumber(win1630) },
+                                    modifier = Modifier.height(26.dp),
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary)
+                                ) {
+                                    Text("ရွေးမည်", fontSize = 10.sp, maxLines = 1, softWrap = false)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (liveData?.twod?.length == 2 && liveData.twod != "--") {
+                Button(
+                    onClick = { onSelectNumber(liveData.twod) },
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Text("တိုက်ရိုက် (${liveData.twod}) ကို ထည့်သွင်းမည်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.height(36.dp)) {
+                Text("ပိတ်မည်", fontSize = 11.5.sp)
+            }
+        }
+    )
 }
 
 @Composable
@@ -796,13 +1134,17 @@ fun SlotCard(
                 text = time,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isOfficial) PrimaryGold else TextSecondary
+                color = if (isOfficial) PrimaryGold else TextSecondary,
+                maxLines = 1,
+                softWrap = false
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
                 fontSize = 9.sp,
-                color = if (isOfficial) CobaltPrimary else TextMuted
+                color = if (isOfficial) CobaltPrimary else TextMuted,
+                maxLines = 1,
+                softWrap = false
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
@@ -810,7 +1152,9 @@ fun SlotCard(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace,
-                color = if (isOfficial) Color(0xFFFFD54F) else TextPrimary
+                color = if (isOfficial) Color(0xFFFFD54F) else TextPrimary,
+                maxLines = 1,
+                softWrap = false
             )
             if (isOfficial && number.length == 2 && number != "--") {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -824,7 +1168,9 @@ fun SlotCard(
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryGold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }

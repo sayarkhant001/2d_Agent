@@ -128,6 +128,7 @@ fun OverflowScreen(
     var showBrakeDialog by remember { mutableStateOf(false) }
     var showSelectDineDialog by remember { mutableStateOf(false) }
     var showManageDineDialog by remember { mutableStateOf(false) }
+    var showDailyHoldDialog by remember { mutableStateOf(false) }
     var overflowSnapshot by remember { mutableStateOf<OverflowSnapshot?>(null) }
 
     // Dine Form State for Manage Dine Dialog
@@ -140,6 +141,7 @@ fun OverflowScreen(
             showBrakeDialog -> showBrakeDialog = false
             showSelectDineDialog -> showSelectDineDialog = false
             showManageDineDialog -> showManageDineDialog = false
+            showDailyHoldDialog -> showDailyHoldDialog = false
             overflowSnapshot != null -> overflowSnapshot = null
             else -> onNavigateBack()
         }
@@ -526,24 +528,32 @@ fun OverflowScreen(
     val snapshot = overflowSnapshot
     if (snapshot != null) {
         val voucherText = buildString {
-            appendLine("=== ဒိုင် တင်ကွက် ဘောင်ချာ ===")
-            appendLine("ဒိုင်အမည်: ${snapshot.dineName}")
-            appendLine("ဘောင်ချာ အမှတ်: ${snapshot.voucherSerial}")
-            appendLine("ပွဲစဉ်: ${snapshot.batch} (${if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀"})")
-            appendLine("အချိန်: ${snapshot.timestamp}")
-            appendLine("---------------------------")
-            snapshot.items.forEachIndexed { idx, (num, amt) ->
-                appendLine(" ${idx + 1}. $num = $amt ကျပ်")
+            appendLine("      တင်ကွက် ဘောင်ချာ    ")
+            if (snapshot.dineName.isNotBlank()) {
+                appendLine(" ဒိုင်      : ${snapshot.dineName}")
+                appendLine(" ဘောင်ချာ : #${snapshot.voucherSerial}")
+            } else {
+                appendLine(" ဘောင်ချာ : #${snapshot.voucherSerial}")
             }
-            appendLine("---------------------------")
-            appendLine("စုစုပေါင်း တင်ငွေ = %,d ကျပ်".format(snapshot.total))
+            appendLine(" အကြိမ်   : ${snapshot.batch}")
+            appendLine(" အချိန်   : ${snapshot.timestamp}")
+            appendLine("------------------------")
+            snapshot.items.forEachIndexed { idx, (num, amt) ->
+                appendLine(" ${idx + 1}. $num = $amt")
+            }
+            appendLine("------------------------")
+            appendLine(" စုစုပေါင်း : %,d ကျပ်".format(snapshot.total))
             val comm = (snapshot.total * (snapshot.commissionRate / 100.0)).toInt()
             if (comm > 0) {
-                appendLine("ကော်မရှင် (${snapshot.commissionRate}%) = %,d ကျပ်".format(comm))
-                appendLine("ပေးချေရမည့်ငွေ = %,d ကျပ်".format(snapshot.total - comm))
+                appendLine(" ကော်မရှင် (${snapshot.commissionRate}%) : %,d ကျပ်".format(comm))
+                appendLine(" ပေးချေငွေ : %,d ကျပ်".format(snapshot.total - comm))
             }
-            appendLine("လျော်ဆ = ${snapshot.multiplier} ဆ")
-            appendLine("===========================")
+            appendLine("------------------------")
+            if (snapshot.dineName.isNotBlank()) {
+                appendLine("   * ${snapshot.dineName} တင်ကွက် *  ")
+            } else {
+                appendLine("   * ဒိုင် တင်ကွက် *  ")
+            }
         }
 
         Dialog(
@@ -772,7 +782,7 @@ fun OverflowScreen(
                 }
             }
 
-            // Overview Metric Bar (Matching Screenshot 1)
+            // Overview Metric Bar (Matching Screenshot: စုစုပေါင်း | ခေါင်းချိုး/ဖြတ်)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
@@ -781,17 +791,17 @@ fun OverflowScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("စုစုပေါင်း ရောင်းရငွေ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("%,d ကျပ်".format(totalGross), fontWeight = FontWeight.Black, fontSize = 14.sp, color = blueColor)
+                        Text("စုစုပေါင်း", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false)
+                        Text("%,d".format(totalGross), fontWeight = FontWeight.Black, fontSize = 14.5.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("ခေါင်းချိုး / ဘရိတ်ကျော်", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("%,d / %,d".format(totalBraked, totalOverflow), fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+                        Text("ခေါင်းချိုး/ဖြတ်", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false)
+                        Text("%,d/-%,d+%,d".format(totalBraked, totalOverflow, commAmount), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, color = blueColor, maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -851,16 +861,14 @@ fun OverflowScreen(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                             Button(
                                 onClick = {
-                                    val keptText = brakedExposures.joinToString("\n") { "${it.number} = ${keptAmount(it.totalBetAmount)}" }
-                                    clipboardManager.setText(AnnotatedString(keptText))
-                                    android.widget.Toast.makeText(context, "သိမ်းဆည်းစာရင်း ကော်ပီ ကူးပြီးပါပြီ", android.widget.Toast.LENGTH_SHORT).show()
+                                    showDailyHoldDialog = true
                                 },
                                 modifier = Modifier.weight(1f).height(34.dp),
                                 shape = RoundedCornerShape(6.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF97316)),
                                 contentPadding = PaddingValues(0.dp)
                             ) {
-                                Text("ရက်ချုပ်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                                Text("ရက်ချုပ်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             }
                             Button(
                                 onClick = {
@@ -882,9 +890,9 @@ fun OverflowScreen(
                 Spacer(modifier = Modifier.width(4.dp))
 
                 // Right Column — Overflow Bets
-                Column(modifier = Modifier.weight(1f).border(1.dp, Color(0xFFDC2626)).padding(2.dp)) {
+                Column(modifier = Modifier.weight(1f).border(1.dp, blueColor).padding(2.dp)) {
                     // Header
-                    Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFDC2626)).padding(vertical = 5.dp, horizontal = 4.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().background(blueColor).padding(vertical = 5.dp, horizontal = 4.dp)) {
                         Text("ဂဏန်း", color = Color.White, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text("ပမာဏ", color = Color.White, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
@@ -901,19 +909,18 @@ fun OverflowScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFFEE2E2).copy(alpha = 0.5f))
                                     .padding(vertical = 4.dp, horizontal = 4.dp)
                             ) {
-                                Text(exposure.number, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, fontFamily = FontFamily.Monospace)
-                                Text("%,d".format(exposure.overflowAmount), modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 13.5.sp, fontFamily = FontFamily.Monospace)
+                                Text(exposure.number, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, fontFamily = FontFamily.Monospace)
+                                Text("%,d".format(exposure.overflowAmount), modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, fontFamily = FontFamily.Monospace)
                             }
                             HorizontalDivider(thickness = 0.5.dp)
                         }
                     }
                     // Subtotal
-                    Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFFEE2E2)).padding(vertical = 5.dp, horizontal = 4.dp)) {
-                        Text("စုစုပေါင်း", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFFDC2626))
-                        Text("%,d".format(totalOverflow), modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color(0xFFDC2626))
+                    Row(modifier = Modifier.fillMaxWidth().background(blueColor.copy(alpha = 0.1f)).padding(vertical = 5.dp, horizontal = 4.dp)) {
+                        Text("စုစုပေါင်း", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                        Text("%,d".format(totalOverflow), modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontWeight = FontWeight.Black, fontSize = 12.sp, color = blueColor)
                     }
                     // Action Buttons under Right Table (Matching Screenshot 1: + တင်မည်, မှတ်တမ်းများ)
                     Column(
