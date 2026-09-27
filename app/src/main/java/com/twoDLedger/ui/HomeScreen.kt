@@ -129,8 +129,8 @@ fun HomeScreen(
         viewModel.getAllBatchNumbers()
     }
 
-    // 6 Main Primary Grid Action Buttons (Inspired by 2D Ledger Prime, beautifully stylized)
-    val mainGridItems = listOf(
+    // Strictly ordered: 4 Core Modules with cohesive, elegant FinTech accents
+    val menuItems = listOf(
         GridMenuItem(
             id = "customers",
             title = "ကော်မရှင်",
@@ -142,7 +142,7 @@ fun HomeScreen(
         GridMenuItem(
             id = "ledger",
             title = "ဂဏန်းများ",
-            subtitle = "စာရင်းချုပ် / ပေါက်စစ်",
+            subtitle = "ပေါက်ဂဏန်း စစ်ဆေးချက်",
             icon = Icons.AutoMirrored.Filled.List,
             iconColors = listOf(Color(0xFF2563EB), Color(0xFF1D4ED8)),
             onClick = onNavigateToLedger
@@ -156,28 +156,11 @@ fun HomeScreen(
             onClick = onNavigateToVouchers
         ),
         GridMenuItem(
-            id = "betting",
-            title = "တင်ကွက်",
-            subtitle = "ထိုးကြေး စာရင်းသွင်းမည်",
-            icon = Icons.Default.Add,
-            iconColors = listOf(Color(0xFF10B981), Color(0xFF059669)),
-            isLocked = isBatchLocked,
-            onClick = onNavigateToBetting
-        ),
-        GridMenuItem(
-            id = "result_format2",
-            title = "ဂဏန်းများ (ပုံစံ ၂)",
-            subtitle = "ဒိုင်ချုပ် ရှင်းတမ်း အစီရင်ခံစာ",
-            icon = Icons.Default.Assessment,
-            iconColors = listOf(Color(0xFF8B5CF6), Color(0xFF6D28D9)),
-            onClick = { onNavigateToResult(currentBatch) }
-        ),
-        GridMenuItem(
-            id = "overflow_format2",
-            title = "တင်ကွက် (ပုံစံ ၂)",
+            id = "overflow",
+            title = "တင်ကွက်များ",
             subtitle = "အထက်ဒိုင် တင်ကွက်",
             icon = Icons.Default.Payment,
-            iconColors = listOf(Color(0xFF6366F1), Color(0xFF4338CA)),
+            iconColors = listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)),
             isLocked = isBatchLocked,
             onClick = onNavigateToOverflow
         )
@@ -735,6 +718,127 @@ fun HomeScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // ── Hero Action Card: "ထိုးကြေး စာရင်းသွင်းမည်" (Direct Betting Entry) ────
+                val heroInteractionSource = remember { MutableInteractionSource() }
+                val heroIsPressed by heroInteractionSource.collectIsPressedAsState()
+                val heroScale by animateFloatAsState(
+                    targetValue = if (heroIsPressed) 0.96f else 1.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    label = "heroScale"
+                )
+
+                Card(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onNavigateToBetting()
+                    },
+                    interactionSource = heroInteractionSource,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            scaleX = heroScale
+                            scaleY = heroScale
+                        }
+                        .shadow(if (heroIsPressed) 2.dp else 6.dp, RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = CobaltPrimary)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color(0xFF1D4ED8),
+                                        Color(0xFF0284C7)
+                                    )
+                                )
+                            )
+                            .padding(horizontal = 18.dp, vertical = 14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.White.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Calculate,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            "ထိုးကြေး စာရင်းသွင်းမည်",
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = rDimens.responsiveSp(16f),
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        if (isBatchLocked) {
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = Color(0xFFFEE2E2),
+                                                border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(11.dp))
+                                                    Text(
+                                                        "ပိတ်ပါပြီ",
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFFB91C1C)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        if (isBatchLocked) "ပေါက်သီးထွက်ပြီးပါပြီ (စာရင်း ပိတ်ထားသည်)" else "ကီးပက်ဖြင့် အမြန် စာရင်းသွင်းရန် နှိပ်ပါ",
+                                        fontSize = rDimens.responsiveSp(11.5f),
+                                        color = Color.White.copy(alpha = 0.85f),
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color(0xFFFFD93D),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+
                 if (bannedNumbers.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Card(
@@ -779,12 +883,12 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // ── 5. The 6 Main Action Buttons Grid (Inspired by 2D Ledger Prime in our Design) ──
+                // ── 2x2 Grid Menu with 4 Core Action Cards ─────────────────
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val chunkedItems = mainGridItems.chunked(2)
+                    val chunkedItems = menuItems.chunked(2)
                     chunkedItems.forEach { rowItems ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -809,6 +913,80 @@ fun HomeScreen(
                                 Spacer(modifier = Modifier.weight(1f))
                             }
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // ── Settings & Preferences Navigation Card ───────────────────
+                val settingsInteractionSource = remember { MutableInteractionSource() }
+                val settingsIsPressed by settingsInteractionSource.collectIsPressedAsState()
+                val settingsScale by animateFloatAsState(
+                    targetValue = if (settingsIsPressed) 0.96f else 1.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    label = "settingsScale"
+                )
+
+                Card(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onNavigateToSettings()
+                    },
+                    interactionSource = settingsInteractionSource,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            scaleX = settingsScale
+                            scaleY = settingsScale
+                        }
+                        .shadow(if (settingsIsPressed) 1.dp else 2.dp, RoundedCornerShape(18.dp)),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "ဆက်တင်နှင့် အချက်အလက်",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    "လိုင်စင်၊ စကားဝှက်၊ အရန်သိမ်းဆည်းမှု စီမံရန်",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
