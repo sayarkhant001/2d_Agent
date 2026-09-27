@@ -143,7 +143,7 @@ fun TwoDMarketCalendarDialog(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "Thai SET & Official Market Status",
+                                text = "တရားဝင် 2D ဈေးကွက် အခြေအနေ",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

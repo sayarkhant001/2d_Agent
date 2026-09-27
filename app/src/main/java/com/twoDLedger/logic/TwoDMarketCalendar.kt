@@ -37,7 +37,7 @@ data class TodayMarketOverview(
     val reason: String,
     val morningSession: String = "မနက်ပိုင်း: ၉:၃၀ မှ ၁၂:၀၁ အထိ",
     val eveningSession: String = "ညနေပိုင်း: ၂:၀၀ မှ ၄:၃၀ အထိ",
-    val officialSource: String = "Stock Exchange of Thailand (SET) & Live API"
+    val officialSource: String = "တရားဝင် ထိုင်း 2D ဈေးကွက် ပြက္ခဒိန်"
 )
 
 object TwoDMarketCalendar {
@@ -187,7 +187,7 @@ object TwoDMarketCalendar {
 
         return if (isActuallyClosed) {
             val finalReason = when {
-                apiReason != null && apiReason.isNotBlank() -> "တရားဝင် Live API မှ အသိပေးချက်: $apiReason"
+                apiReason != null && apiReason.isNotBlank() -> "တရားဝင် ဈေးကွက်မှ အသိပေးချက်: $apiReason"
                 dayInfo.state == DayMarketState.HOLIDAY_CLOSED -> dayInfo.reasonMm
                 dayInfo.state == DayMarketState.WEEKEND_CLOSED -> dayInfo.reasonMm
                 else -> "2D ဈေးကွက် ပိတ်ထားပါသည်"
@@ -195,7 +195,7 @@ object TwoDMarketCalendar {
             TodayMarketOverview(
                 isOpen = false,
                 statusBadge = "ဈေးကွက် ပိတ်ပါသည်",
-                details = "ယနေ့ ထိုင်းစတော့အိတ်ချိန်း (SET) 2D ဈေးကွက် ပိတ်ထားပါသည်",
+                details = "ယနေ့ ထိုင်း 2D ဈေးကွက် ပိတ်ထားပါသည်",
                 reason = finalReason
             )
         } else {

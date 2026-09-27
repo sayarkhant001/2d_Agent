@@ -389,7 +389,7 @@ fun HomeScreen(
                                         .background(Color(0xFF10B981))
                                 )
                                 Text(
-                                    text = "🇹🇭 Thai Stock (SET) Live",
+                                    text = "🇹🇭 Thai 2D Live",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary

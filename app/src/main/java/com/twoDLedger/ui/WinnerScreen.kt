@@ -271,7 +271,7 @@ fun WinnerScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "ထိုင်းစတော့ရှယ်ယာ (SET) တိုက်ရိုက်",
+                                    text = "ထိုင်း 2D တိုက်ရိုက်",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp,
                                     color = TextPrimary
@@ -296,7 +296,7 @@ fun WinnerScreen(
                             SlotCard(
                                 modifier = Modifier.weight(1f),
                                 time = "9:00 AM",
-                                label = "အညွှန်း",
+                                label = "အဖွင့်",
                                 number = ind900.ifBlank { "--" },
                                 isOfficial = false,
                                 onSelect = {}
@@ -320,7 +320,7 @@ fun WinnerScreen(
                             SlotCard(
                                 modifier = Modifier.weight(1f),
                                 time = "2:00 PM",
-                                label = "အညွှန်း",
+                                label = "အဖွင့်",
                                 number = ind1400.ifBlank { "--" },
                                 isOfficial = false,
                                 onSelect = {}
@@ -344,7 +344,7 @@ fun WinnerScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "* 9:00 AM နှင့် 2:00 PM မှာ အညွှန်း (Indicator) သာဖြစ်ပြီး၊ 12:00 PM နှင့် 4:30 PM မှာ တရားဝင်ပေါက်သီး ဖြစ်ပါသည်။",
+                            text = "* 9:00 AM နှင့် 2:00 PM မှာ အစောပိုင်း အဖွင့်ဂဏန်းသာဖြစ်ပြီး၊ 12:00 PM နှင့် 4:30 PM မှာ တရားဝင်ပေါက်သီး ဖြစ်ပါသည်။",
                             fontSize = 10.sp,
                             color = TextMuted,
                             lineHeight = 14.sp

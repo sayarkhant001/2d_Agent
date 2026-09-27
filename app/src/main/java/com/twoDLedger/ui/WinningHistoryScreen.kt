@@ -174,11 +174,11 @@ fun HistoryDayCard(record: WinningHistory) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 9:00 AM Modern Indicator
+                // 9:00 AM Modern Opening
                 IndicatorBox(
                     modifier = Modifier.weight(1f),
                     title = "9:00 AM",
-                    subtitle = "အင်တာနက်",
+                    subtitle = "အဖွင့်",
                     number = record.num900.ifBlank { "--" },
                     isOfficialWinner = false
                 )
@@ -193,11 +193,11 @@ fun HistoryDayCard(record: WinningHistory) {
                     setDetail = if (record.set1200.isNotBlank()) "SET: ${record.set1200}" else null
                 )
 
-                // 2:00 PM Modern Indicator
+                // 2:00 PM Modern Opening
                 IndicatorBox(
                     modifier = Modifier.weight(1f),
                     title = "2:00 PM",
-                    subtitle = "အင်တာနက်",
+                    subtitle = "အဖွင့်",
                     number = record.num1400.ifBlank { "--" },
                     isOfficialWinner = false
                 )
