@@ -50,6 +50,12 @@ import com.twoDLedger.ui.theme.*
 import kotlinx.coroutines.launch
 
 enum class FocusField { NUMBER, AMOUNT }
+private val BettingPrimary = Color(0xFF046A4E)          // Imperial Emerald
+private val BettingPrimaryContainer = Color(0xFFDCFCE7) // Soft Mint Container
+private val BettingOnPrimaryContainer = Color(0xFF013828)
+private val BettingGoldContainer = Color(0xFFFEF3C7)    // Soft Amber Chip
+private val BettingGoldText = Color(0xFF92400E)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -410,410 +416,466 @@ fun BettingScreen(
 
     val totalAmount = pendingBets.sumOf { it.amount }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // --- TOP BAR (Matches Screenshot 1) ---
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(BettingPrimaryContainer)
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "အကြိမ် : $currentBatch",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BettingOnPrimaryContainer
+                )
+                // 2D Session Selector Chip (Minimalist)
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color.White.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, BettingPrimary.copy(alpha = 0.3f)),
+                    modifier = Modifier.clickable {
+                        val nextSess = if (currentSession == "12:00 PM") "4:30 PM" else "12:00 PM"
+                        viewModel.setSession(nextSess)
+                    }
+                ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "2D ထိုးကြေး စာရင်း",
-                            style = MaterialTheme.typography.titleMedium,
+                            text = if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
+                            fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = BettingPrimary
                         )
-                        // 2D Session Selector Chip (Minimalist)
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                            modifier = Modifier.clickable {
-                                val nextSess = if (currentSession == "12:00 PM") "4:30 PM" else "12:00 PM"
-                                viewModel.setSession(nextSess)
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(Modifier.width(2.dp))
-                                Icon(
-                                    Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                        Spacer(Modifier.width(2.dp))
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
+                            Icons.Default.ArrowDropDown,
+                            contentDescription = null,
+                            tint = BettingPrimary,
+                            modifier = Modifier.size(14.dp)
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        checkClipboardForBets()
-                        showPasteDialog = true
-                    }) {
-                        Icon(
-                            Icons.Default.ElectricBolt,
-                            contentDescription = "Quick Paste",
-                            tint = CobaltPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                }
+            }
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = BettingOnPrimaryContainer,
+                    modifier = Modifier.size(28.dp)
                 )
-            )
+            }
         }
-    ) { paddingValues ->
-        Column(
+
+        // --- CUSTOMER SELECTOR BAR (Matches Screenshot 1) ---
+        Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         ) {
-            // ── 1. UNIFIED CASHIER HEADER (Compact, Neat & Minimalist) ───────────
-            Surface(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
-                shadowElevation = 0.5.dp
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .clickable { expandedCustomer = true }
+                        .weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Line 1: Customer selector + action chips
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Icon(
+                        Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = BettingPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "ထိုးသူ : ",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        customers.find { it.id == selectedCustomer }?.name ?: "ကော်မရှင် ရွေးပါ ▾",
+                        color = if (selectedCustomer != null) BettingPrimary else MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                }
+
+                if (selectedCustomer != null) {
+                    Surface(
+                        onClick = { onNavigateToCustomerVouchers(selectedCustomer!!) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = BettingPrimaryContainer
                     ) {
-                        // Customer Dropdown Pill
-                        Box {
-                            Surface(
-                                onClick = { expandedCustomer = true },
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Person,
-                                        contentDescription = null,
-                                        tint = CobaltPrimary,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = customers.find { it.id == selectedCustomer }?.name ?: "ထိုးသူ ရွေးပါ",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = if (selectedCustomer != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                                        maxLines = 1
-                                    )
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        Icons.Default.ArrowDropDown,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                }
-                            }
-
-                            DropdownMenu(
-                                expanded = expandedCustomer,
-                                onDismissRequest = { expandedCustomer = false }
-                            ) {
-                                customers.forEach { c ->
-                                    DropdownMenuItem(
-                                        text = { Text(c.name, fontWeight = FontWeight.Medium) },
-                                        onClick = {
-                                            selectedCustomer = c.id
-                                            expandedCustomer = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        // Action Pills: Vouchers + Quick Bet + Keypad Toggle
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (selectedCustomer != null) {
-                                Surface(
-                                    onClick = { onNavigateToCustomerVouchers(selectedCustomer!!) },
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                                ) {
-                                    Text(
-                                        "ဘောင်ချာများ",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-
-                            Surface(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    checkClipboardForBets()
-                                    pasteText = ""
-                                    showPasteDialog = true
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                color = CobaltLight.copy(alpha = 0.4f),
-                                border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Default.ElectricBolt, contentDescription = null, tint = CobaltPrimary, modifier = Modifier.size(13.dp))
-                                    Spacer(Modifier.width(2.dp))
-                                    Text("အမြန်ထိုး", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CobaltPrimary)
-                                }
-                            }
-
-                            Surface(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    showManualKeypad = !showManualKeypad
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (showManualKeypad) CobaltPrimary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = BorderStroke(1.dp, if (showManualKeypad) CobaltPrimary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Keyboard,
-                                        contentDescription = null,
-                                        tint = if (showManualKeypad) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Spacer(Modifier.width(2.dp))
-                                    Text(
-                                        if (showManualKeypad) "ဝှက်" else "ကီးပက်",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (showManualKeypad) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Line 2: Voucher Summary Banner & Big "ထိုးမည်" Button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            color = CobaltLight.copy(alpha = 0.35f),
-                            border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.2f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "${pendingBets.size} ကွက်",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = CobaltPrimary
-                                )
-                                Text(
-                                    "= %,d Ks".format(totalAmount),
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 13.5.sp,
-                                    color = CobaltDark,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.width(8.dp))
-
-                        Button(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                submitVoucher()
-                            },
-                            enabled = pendingBets.isNotEmpty(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = CobaltPrimary,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                            modifier = Modifier.height(34.dp)
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("ထိုးမည်", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
+                        Text(
+                            "ဘောင်ချာများ ကြည့်ရန်",
+                            color = BettingOnPrimaryContainer,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
                     }
                 }
             }
 
-            // ── 2. PENDING BETS LIST (Clean Minimal Receipt Canvas) ───────────────
-            Box(modifier = Modifier.weight(1f)) {
-                if (pendingBets.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                modifier = Modifier.size(52.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.ReceiptLong,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.outlineVariant,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
+            DropdownMenu(expanded = expandedCustomer, onDismissRequest = { expandedCustomer = false }) {
+                customers
+                    .filter { !it.name.contains("တင်ကွက်") && !it.name.contains("overflow", ignoreCase = true) && !it.name.contains("upper", ignoreCase = true) }
+                    .forEach { customer ->
+                        DropdownMenuItem(
+                            text = { Text(customer.name, fontWeight = FontWeight.SemiBold) },
+                            onClick = {
+                                selectedCustomer = customer.id
+                                expandedCustomer = false
                             }
-                            Text(
-                                text = "ထိုးဂဏန်းများ ရိုက်ထည့်ပါ (သို့) အမြန်ထိုး သုံးပါ",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontSize = 12.5.sp
-                            )
-                        }
+                        )
+                    }
+            }
+        }
+
+        // ── BET LIST BOX (Matches Screenshot 1) ──────────────────────────────
+        val maxAmtB   = if (pendingBets.isNotEmpty()) pendingBets.maxOf { it.amount } else 0
+        val amtWidthB = if (maxAmtB > 0) "%,d".format(maxAmtB).length else 5
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp)
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(10.dp))
+                .border(2.dp, BettingPrimary, RoundedCornerShape(10.dp))
+        ) {
+            // ── Header ────────────────────────────────────────────────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        BettingPrimary,
+                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+                    )
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "စဉ်   ဂဏန်း",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "ပမာဏ",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(90.dp)
+                )
+                if (pendingBets.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showClearConfirmDialog = true },
+                        modifier = Modifier.size(24.dp).padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "အားလုံး ရှင်းမည်",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 10.dp, vertical = 2.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(
-                            items = pendingBets.reversed(),
-                            key = { "${it.number}_${it.amount}_${pendingBets.indexOf(it)}" }
-                        ) { bet ->
-                            val itemIndex = pendingBets.indexOf(bet) + 1
-                            Surface(
-                                modifier = Modifier.fillMaxWidth().animateItem(),
-                                shape = RoundedCornerShape(9.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Spacer(Modifier.width(28.dp))
+                }
+            }
+
+            // ── Rows or Empty State ───────────────────────────────────────────
+            if (pendingBets.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "ဂဏန်းထည့်ရန်",
+                            color = BettingPrimary.copy(alpha = 0.35f),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "ကီးပက်ကို သုံး၍ ထိုးနိုင်သည်",
+                            color = BettingPrimary.copy(alpha = 0.25f),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(pendingBets.size) { i ->
+                        val bet = pendingBets[i]
+                        val isEven = i % 2 == 0
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (isEven) MaterialTheme.colorScheme.surface
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                                )
+                                .padding(start = 10.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "${i + 1}.",
+                                fontSize = 11.sp,
+                                color = BettingPrimary.copy(alpha = 0.45f),
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.width(26.dp),
+                                textAlign = TextAlign.End
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                bet.number,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = BettingPrimary,
+                                fontFamily = FontFamily.Monospace,
+                                letterSpacing = 2.sp,
+                                modifier = Modifier.width(44.dp)
+                            )
+                            Text(
+                                "=",
+                                fontSize = 16.sp,
+                                color = Color(0xFF9CA3AF),
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            Text(
+                                "%,d".format(bet.amount).padStart(amtWidthB),
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF111827),
+                                fontFamily = FontFamily.Monospace,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                " Ks",
+                                fontSize = 11.sp,
+                                color = Color(0xFF6B7280),
+                                fontFamily = FontFamily.Monospace
+                            )
+                            IconButton(
+                                onClick = { pendingBets.removeAt(i) },
+                                modifier = Modifier.size(30.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            modifier = Modifier.padding(end = 8.dp)
-                                        ) {
-                                            Text(
-                                                text = "#$itemIndex",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                            )
-                                        }
-
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = CobaltLight.copy(alpha = 0.4f),
-                                            border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.25f))
-                                        ) {
-                                            Text(
-                                                text = bet.number,
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.Black,
-                                                color = CobaltPrimary,
-                                                fontFamily = FontFamily.Monospace,
-                                                letterSpacing = 1.sp,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                            )
-                                        }
-
-                                        Text(
-                                            "=",
-                                            fontSize = 13.sp,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            fontFamily = FontFamily.Monospace,
-                                            modifier = Modifier.padding(horizontal = 6.dp)
-                                        )
-                                    }
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = "${String.format("%,d", bet.amount)} Ks",
-                                            fontSize = 13.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontFamily = FontFamily.Monospace
-                                        )
-                                        Spacer(Modifier.width(6.dp))
-                                        IconButton(
-                                            onClick = { pendingBets.remove(bet) },
-                                            modifier = Modifier.size(24.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Close,
-                                                contentDescription = "Delete",
-                                                tint = Color(0xFFEF4444).copy(alpha = 0.8f),
-                                                modifier = Modifier.size(15.dp)
-                                            )
-                                        }
-                                    }
-                                }
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "ဖျက်",
+                                    tint = Color(0xFFEF4444),
+                                    modifier = Modifier.size(15.dp)
+                                )
                             }
                         }
+                        if (i < pendingBets.lastIndex)
+                            HorizontalDivider(
+                                color = BettingPrimary.copy(alpha = 0.08f),
+                                thickness = 0.5.dp
+                            )
                     }
                 }
             }
+        }
+
+        // ── PRO CASHIER VOUCHER ACTION BAR (Matches Screenshot 1) ───────────
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 2.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
+        ) {
+            val actionBarHeight = if (rDimens.isCompact) 42.dp else 46.dp
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (rDimens.isCompact) 6.dp else 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Left: Summary Badge (0 ကွက် = 0 Ks)
+                Surface(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .height(actionBarHeight),
+                    shape = RoundedCornerShape(9.dp),
+                    color = BettingPrimaryContainer.copy(alpha = 0.75f),
+                    border = BorderStroke(1.dp, BettingPrimary.copy(alpha = 0.3f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(
+                            "${pendingBets.size} ကွက်",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = if (rDimens.isCompact) 11.sp else 11.5.sp,
+                            lineHeight = 13.sp,
+                            color = BettingPrimary,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                        val amountFontSize = when {
+                            totalAmount >= 100_000_000 -> 10.sp
+                            totalAmount >= 10_000_000  -> 10.5.sp
+                            totalAmount >= 1_000_000   -> 11.5.sp
+                            else                       -> 12.5.sp
+                        }
+                        Text(
+                            "= %,d Ks".format(totalAmount),
+                            fontWeight = FontWeight.Black,
+                            fontSize = amountFontSize,
+                            lineHeight = 15.sp,
+                            color = BettingOnPrimaryContainer,
+                            fontFamily = FontFamily.Monospace,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(5.dp))
+
+                // Right: Quick Bet (အမြန်ထိုး), Keypad Toggle (ကီးပက်/ဝှက်), & ထိုးမည်
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            checkClipboardForBets()
+                            pasteText = ""
+                            showPasteDialog = true
+                        },
+                        shape = RoundedCornerShape(9.dp),
+                        contentPadding = PaddingValues(
+                            horizontal = if (rDimens.isCompact) 7.dp else 9.dp,
+                            vertical = 2.dp
+                        ),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = BettingGoldContainer,
+                            contentColor = BettingGoldText
+                        ),
+                        modifier = Modifier.height(actionBarHeight)
+                    ) {
+                        Icon(Icons.Default.ElectricBolt, contentDescription = "Quick Bet", modifier = Modifier.size(14.dp), tint = BettingGoldText)
+                        Spacer(Modifier.width(2.dp))
+                        Text(
+                            "အမြန်ထိုး",
+                            fontSize = if (rDimens.isCompact) 11.sp else 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BettingGoldText,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            showManualKeypad = !showManualKeypad
+                        },
+                        shape = RoundedCornerShape(9.dp),
+                        contentPadding = PaddingValues(
+                            horizontal = if (rDimens.isCompact) 6.dp else 8.dp,
+                            vertical = 2.dp
+                        ),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = if (showManualKeypad) BettingPrimary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (showManualKeypad) BettingPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.height(actionBarHeight)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Keyboard,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            if (showManualKeypad) "ဝှက်" else "ကီးပက်",
+                            fontSize = if (rDimens.isCompact) 10.5.sp else 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            submitVoucher()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (pendingBets.isNotEmpty()) BettingPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (pendingBets.isNotEmpty()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(9.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = if (pendingBets.isNotEmpty()) 2.dp else 0.dp),
+                        contentPadding = PaddingValues(
+                            horizontal = if (rDimens.isCompact) 9.dp else 12.dp,
+                            vertical = 2.dp
+                        ),
+                        modifier = Modifier.height(actionBarHeight)
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            "ထိုးမည်",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
+            }
+        }
 
             // ── 3. INPUT AREA & NUMBER PAD (Clean Minimal Ergonomics) ─────────────
             AnimatedVisibility(
@@ -843,10 +905,10 @@ fun BettingScreen(
                                     focusedField = FocusField.NUMBER
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isNumFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                color = if (isNumFocused) BettingPrimaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 border = BorderStroke(
                                     width = if (isNumFocused) 2.dp else 1.dp,
-                                    color = if (isNumFocused) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+                                    color = if (isNumFocused) BettingPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
                                 ),
                                 modifier = Modifier
                                     .weight(1.15f)
@@ -863,11 +925,11 @@ fun BettingScreen(
                                         text = "ဂဏန်း",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = if (isNumFocused) CobaltPrimary else MaterialTheme.colorScheme.outline
+                                        color = if (isNumFocused) BettingPrimary else MaterialTheme.colorScheme.outline
                                     )
                                     Text(
                                         text = if (tempNumber.isEmpty()) "00" else tempNumber,
-                                        color = if (tempNumber.isEmpty()) MaterialTheme.colorScheme.outline.copy(alpha = 0.6f) else CobaltPrimary,
+                                        color = if (tempNumber.isEmpty()) MaterialTheme.colorScheme.outline.copy(alpha = 0.6f) else BettingPrimary,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Black,
                                         fontFamily = FontFamily.Monospace,
@@ -963,10 +1025,10 @@ fun BettingScreen(
                                     isFreshAmountInput = true
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isAmtFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                color = if (isAmtFocused) BettingPrimaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 border = BorderStroke(
                                     width = if (isAmtFocused) 2.dp else 1.dp,
-                                    color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+                                    color = if (isAmtFocused) BettingPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
                                 ),
                                 modifier = Modifier
                                     .weight(1.25f)
@@ -983,7 +1045,7 @@ fun BettingScreen(
                                         text = "ငွေပမာဏ",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.outline
+                                        color = if (isAmtFocused) BettingPrimary else MaterialTheme.colorScheme.outline
                                     )
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -991,7 +1053,7 @@ fun BettingScreen(
                                     ) {
                                         Text(
                                             text = tempAmount,
-                                            color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.onSurface,
+                                            color = if (isAmtFocused) BettingPrimary else MaterialTheme.colorScheme.onSurface,
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Black,
                                             fontFamily = FontFamily.Monospace,
@@ -1138,9 +1200,9 @@ fun BettingScreen(
                                 TactileKeypadButton(
                                     text = "R",
                                     subtitle = "အပြန်",
-                                    bgColor = CobaltPrimary,
+                                    bgColor = BettingPrimary,
                                     contentColor = Color.White,
-                                    borderColor = CobaltDark,
+                                    borderColor = BettingPrimary,
                                     modifier = Modifier.weight(1f)
                                 ) { handleSpecial("R") }
                             }
@@ -1193,9 +1255,9 @@ fun BettingScreen(
                                 TactileKeypadButton(
                                     text = "OK",
                                     subtitle = "ထည့်မည်",
-                                    bgColor = CobaltPrimary,
+                                    bgColor = BettingPrimary,
                                     contentColor = Color.White,
-                                    borderColor = CobaltDark,
+                                    borderColor = BettingPrimary,
                                     modifier = Modifier.weight(1f)
                                 ) { submit() }
                             }
@@ -1429,87 +1491,112 @@ fun BettingScreen(
             )
         }
 
-        // --- CONFIRM BET DIALOG ---
+        // --- BET CONFIRMATION DIALOG (Screenshot 2 Match) ---
         if (showBetConfirmDialog) {
+            val customerObj = customers.find { it.id == selectedCustomer }
+            val customerName = customerObj?.name ?: "သတ်မှတ်မထားပါ"
             AlertDialog(
-                onDismissRequest = { showBetConfirmDialog = false },
+                onDismissRequest = {
+                    showBetConfirmDialog = false
+                },
                 icon = {
                     Icon(
-                        Icons.Default.CheckCircle,
+                        imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
-                        tint = CobaltPrimary,
-                        modifier = Modifier.size(36.dp)
+                        tint = BettingPrimary,
+                        modifier = Modifier.size(38.dp)
                     )
                 },
                 title = {
                     Text(
-                        "ဘောင်ချာ သိမ်းဆည်းမည်လား?",
+                        "ထိုးကြေး စာရင်းသွင်းရန် အတည်ပြုပါ",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        textAlign = TextAlign.Center
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 },
                 text = {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = CobaltLight.copy(alpha = 0.45f)),
-                            border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f)),
-                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = BettingPrimaryContainer.copy(alpha = 0.45f)),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("ထိုးသူ :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(customers.find { it.id == selectedCustomer }?.name ?: "", fontWeight = FontWeight.Bold, color = CobaltPrimary, fontSize = 14.sp)
+                                    Text("ထိုးသူ :", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                                    Text(customerName, fontWeight = FontWeight.Bold, color = BettingPrimary, fontSize = 15.sp)
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("ကွက်ရေ :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("${pendingBets.size} ကွက်", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("ဂဏန်း အရေအတွက် :", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                                    Text("${pendingBets.size} ကွက်", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
                                 }
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("စုစုပေါင်း ငွေပမာဏ :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("%,d Ks".format(totalAmount), fontWeight = FontWeight.Black, fontSize = 15.sp, color = CobaltPrimary, fontFamily = FontFamily.Monospace)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("ကျသင့်ငွေ :", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(
+                                        "= %,d Ks".format(totalAmount),
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 17.sp,
+                                        color = BettingPrimary,
+                                        fontFamily = FontFamily.Monospace
+                                    )
                                 }
                                 if (tempRemark.isNotBlank()) {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("မှတ်ချက် :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(tempRemark, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                        Text("မှတ်ချက် :", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                                        Text(tempRemark, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                                     }
                                 }
                             }
                         }
+
+                        Text(
+                            "မတော်တဆ ထိမိခြင်းမှ ကာကွယ်ရန် ထိုးကြေး စာရင်းသွင်းမှုကို အတည်ပြုပေးပါ။ အမှန်တကယ် ထိုးမည်ဆိုပါက 'အတည်ပြု ထိုးမည်' ကို နှိပ်ပါ။",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 17.sp
+                        )
                     }
                 },
                 confirmButton = {
                     Button(
-                        onClick = { confirmAndSaveVoucher() },
-                        colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary),
-                        shape = RoundedCornerShape(8.dp)
+                        onClick = {
+                            showBetConfirmDialog = false
+                            confirmAndSaveVoucher()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BettingPrimary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("ဘောင်ချာ သိမ်းမည်", fontWeight = FontWeight.Bold)
+                        Text("အတည်ပြု ထိုးမည်", fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     OutlinedButton(
-                        onClick = { showBetConfirmDialog = false },
-                        shape = RoundedCornerShape(8.dp)
+                        onClick = {
+                            showBetConfirmDialog = false
+                        },
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("မလုပ်တော့")
+                        Text("ဖျက်သိမ်းမည် (မထိုးပါ)")
                     }
                 }
             )
         }
-
         // --- CONFIRM CLEAR ALL DIALOG ---
         if (showClearConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showClearConfirmDialog = false },
                 icon = {
                     Icon(
-                        Icons.Default.Delete,
+                        imageVector = Icons.Default.Delete,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(36.dp)
@@ -1519,16 +1606,39 @@ fun BettingScreen(
                     Text(
                         "ထိုးထားသော စာရင်းများ အားလုံး ရှင်းလင်းမည်လား?",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        textAlign = TextAlign.Center
+                        fontSize = 17.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 },
                 text = {
-                    Text(
-                        "လက်ရှိ ရိုက်ထည့်ထားသော ${pendingBets.size} ကွက် (%,d Ks) အားလုံး ပျက်သွားပါမည်။".format(totalAmount),
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("ဖျက်မည့် စာရင်း :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${pendingBets.size} ကွက်", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("စုစုပေါင်း ပမာဏ :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("%,d Ks".format(totalAmount), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, fontFamily = FontFamily.Monospace, fontSize = 14.sp)
+                                }
+                            }
+                        }
+                        Text(
+                            "စာရင်းသွင်းထားသော ထိုးကြေးဂဏန်းများ အားလုံး ပျက်သွားပါမည်။ အမှန်တကယ် ရှင်းလင်းမည်ဆိုပါက 'အားလုံး ရှင်းမည်' ကို နှိပ်ပါ။",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 16.sp
+                        )
+                    }
                 },
                 confirmButton = {
                     Button(
@@ -1538,8 +1648,11 @@ fun BettingScreen(
                             showClearConfirmDialog = false
                             android.widget.Toast.makeText(context, "စာရင်းများ အားလုံး ရှင်းလင်းပြီးပါပြီ", android.widget.Toast.LENGTH_SHORT).show()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        shape = RoundedCornerShape(8.dp)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
                         Text("အားလုံး ရှင်းမည်", fontWeight = FontWeight.Bold)
                     }
@@ -1547,14 +1660,13 @@ fun BettingScreen(
                 dismissButton = {
                     OutlinedButton(
                         onClick = { showClearConfirmDialog = false },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("မလုပ်တော့")
+                        Text("မရှင်းပါ (ဖျက်သိမ်း)")
                     }
                 }
             )
         }
-
         // --- PASTE ERRORS DIALOG ---
         if (pasteErrors.isNotEmpty()) {
             AlertDialog(
@@ -1662,7 +1774,6 @@ fun BettingScreen(
             )
         }
     }
-}
 
 // ── Modern Minimalist Tactile Keypad Button ──────────────────────────────────
 @Composable
