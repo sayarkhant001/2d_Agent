@@ -83,6 +83,7 @@ fun BettingScreen(
     // Keypad and Input state
     var showManualKeypad by remember { mutableStateOf(true) }
     var currentBetType by remember { mutableStateOf("ဒဲ့") }
+    var expandedBetTypeMenu by remember { mutableStateOf(false) }
     var focusedField by remember { mutableStateOf(FocusField.NUMBER) }
     var tempNumber by remember { mutableStateOf("") }
     var tempAmount by remember { mutableStateOf("1000") }
@@ -421,210 +422,212 @@ fun BettingScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Customer Selector Bar (Minimalist Neat Card)
+            // ── 1. UNIFIED CASHIER HEADER (Compact, Neat & Minimalist) ───────────
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp, vertical = 4.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+                shadowElevation = 0.5.dp
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        Row(
-                            modifier = Modifier.clickable { expandedCustomer = true },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.People,
-                                contentDescription = null,
-                                tint = CobaltPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "ထိုးသူ : ",
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = customers.find { it.id == selectedCustomer }?.name ?: "ထိုးသူ ရွေးပါ ▾",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = if (selectedCustomer != null) CobaltPrimary else MaterialTheme.colorScheme.error
-                            )
+                    // Line 1: Customer selector + action chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Customer Dropdown Pill
+                        Box {
+                            Surface(
+                                onClick = { expandedCustomer = true },
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = CobaltPrimary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = customers.find { it.id == selectedCustomer }?.name ?: "ထိုးသူ ရွေးပါ",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = if (selectedCustomer != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                                        maxLines = 1
+                                    )
+                                    Spacer(Modifier.width(2.dp))
+                                    Icon(
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = expandedCustomer,
+                                onDismissRequest = { expandedCustomer = false }
+                            ) {
+                                customers.forEach { c ->
+                                    DropdownMenuItem(
+                                        text = { Text(c.name, fontWeight = FontWeight.Medium) },
+                                        onClick = {
+                                            selectedCustomer = c.id
+                                            expandedCustomer = false
+                                        }
+                                    )
+                                }
+                            }
                         }
 
-                        DropdownMenu(
-                            expanded = expandedCustomer,
-                            onDismissRequest = { expandedCustomer = false }
+                        // Action Pills: Vouchers + Quick Bet + Keypad Toggle
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            customers.forEach { c ->
-                                DropdownMenuItem(
-                                    text = { Text(c.name, fontWeight = FontWeight.Medium) },
-                                    onClick = {
-                                        selectedCustomer = c.id
-                                        expandedCustomer = false
-                                    }
-                                )
+                            if (selectedCustomer != null) {
+                                Surface(
+                                    onClick = { onNavigateToCustomerVouchers(selectedCustomer!!) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                ) {
+                                    Text(
+                                        "ဘောင်ချာများ",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    checkClipboardForBets()
+                                    pasteText = ""
+                                    showPasteDialog = true
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                color = CobaltLight.copy(alpha = 0.4f),
+                                border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.3f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.ElectricBolt, contentDescription = null, tint = CobaltPrimary, modifier = Modifier.size(13.dp))
+                                    Spacer(Modifier.width(2.dp))
+                                    Text("အမြန်ထိုး", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CobaltPrimary)
+                                }
+                            }
+
+                            Surface(
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    showManualKeypad = !showManualKeypad
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (showManualKeypad) CobaltPrimary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(1.dp, if (showManualKeypad) CobaltPrimary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Keyboard,
+                                        contentDescription = null,
+                                        tint = if (showManualKeypad) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(Modifier.width(2.dp))
+                                    Text(
+                                        if (showManualKeypad) "ဝှက်" else "ကီးပက်",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (showManualKeypad) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
 
-                    // Customer Vouchers Shortcut Button
-                    if (selectedCustomer != null) {
-                        Surface(
-                            onClick = { onNavigateToCustomerVouchers(selectedCustomer!!) },
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                        ) {
-                            Text(
-                                "ဘောင်ချာများ",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // PRO CASHIER VOUCHER ACTION BAR (From 3d_Agent adapted to 2D)
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 1.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
-            ) {
-                val actionBarHeight = if (rDimens.isCompact) 42.dp else 46.dp
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Left: Summary Badge (Count + Total Amount Ks)
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .height(actionBarHeight),
-                        shape = RoundedCornerShape(9.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .padding(horizontal = 10.dp, vertical = 2.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            Text(
-                                "${pendingBets.size} ကွက်",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.5.sp,
-                                color = CobaltPrimary,
-                                maxLines = 1
-                            )
-                            Text(
-                                "= %,d Ks".format(totalAmount),
-                                fontWeight = FontWeight.Black,
-                                fontSize = if (totalAmount >= 10_000_000) 11.sp else 13.sp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontFamily = FontFamily.Monospace,
-                                maxLines = 1
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.width(6.dp))
-
-                    // Right: Quick Bet (အမြန်ထိုး), Keypad Toggle (ဝှက်/ကီးပက်), and Bet (ထိုးမည်)
+                    // Line 2: Voucher Summary Banner & Big "ထိုးမည်" Button
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Quick Bet button
-                        FilledTonalButton(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                checkClipboardForBets()
-                                pasteText = ""
-                                showPasteDialog = true
-                            },
-                            shape = RoundedCornerShape(9.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier.height(actionBarHeight)
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            color = CobaltLight.copy(alpha = 0.35f),
+                            border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.2f))
                         ) {
-                            Icon(Icons.Default.ElectricBolt, contentDescription = "Quick Bet", modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(2.dp))
-                            Text("အမြန်ထိုး", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    "${pendingBets.size} ကွက်",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = CobaltPrimary
+                                )
+                                Text(
+                                    "= %,d Ks".format(totalAmount),
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 13.5.sp,
+                                    color = CobaltDark,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
                         }
 
-                        // Keypad Toggle: easily collapse keypad to inspect bets or edit
-                        FilledTonalButton(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                showManualKeypad = !showManualKeypad
-                            },
-                            shape = RoundedCornerShape(9.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = if (showManualKeypad) CobaltPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (showManualKeypad) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            modifier = Modifier.height(actionBarHeight)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Keyboard,
-                                contentDescription = null,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(Modifier.width(3.dp))
-                            Text(
-                                if (showManualKeypad) "ဝှက်" else "ကီးပက်",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1
-                            )
-                        }
+                        Spacer(Modifier.width(8.dp))
 
-                        // Submit Voucher Button
                         Button(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 submitVoucher()
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (pendingBets.isNotEmpty()) CobaltPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (pendingBets.isNotEmpty()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            shape = RoundedCornerShape(9.dp),
                             enabled = pendingBets.isNotEmpty(),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                            modifier = Modifier.height(actionBarHeight)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = CobaltPrimary,
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                            modifier = Modifier.height(34.dp)
                         ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(15.dp))
-                            Spacer(Modifier.width(3.dp))
-                            Text("ထိုးမည်", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("ထိုးမည်", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
-            // Pending Bets List
+            // ── 2. PENDING BETS LIST (Clean Minimal Receipt Canvas) ───────────────
             Box(modifier = Modifier.weight(1f)) {
                 if (pendingBets.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -632,16 +635,24 @@ fun BettingScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ReceiptLong,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.size(44.dp)
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.size(52.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ReceiptLong,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.outlineVariant,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
                             Text(
-                                text = "ထိုးဂဏန်းများ ထည့်သွင်းပါ (သို့) အမြန်ထိုး သုံးပါ",
+                                text = "ထိုးဂဏန်းများ ရိုက်ထည့်ပါ (သို့) အမြန်ထိုး သုံးပါ",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontSize = 13.sp
+                                fontSize = 12.5.sp
                             )
                         }
                     }
@@ -649,36 +660,61 @@ fun BettingScreen(
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 2.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(pendingBets.reversed(), key = { "${it.number}_${it.amount}_${pendingBets.indexOf(it)}" }) { bet ->
+                        items(
+                            items = pendingBets.reversed(),
+                            key = { "${it.number}_${it.amount}_${pendingBets.indexOf(it)}" }
+                        ) { bet ->
+                            val itemIndex = pendingBets.indexOf(bet) + 1
                             Surface(
                                 modifier = Modifier.fillMaxWidth().animateItem(),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(9.dp),
                                 color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                                        .padding(horizontal = 10.dp, vertical = 5.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = bet.number,
-                                            fontSize = 17.sp,
-                                            fontWeight = FontWeight.Black,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontFamily = FontFamily.Monospace,
-                                            letterSpacing = 1.sp,
-                                            modifier = Modifier.width(42.dp)
-                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            modifier = Modifier.padding(end = 8.dp)
+                                        ) {
+                                            Text(
+                                                text = "#$itemIndex",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = CobaltLight.copy(alpha = 0.4f),
+                                            border = BorderStroke(1.dp, CobaltPrimary.copy(alpha = 0.25f))
+                                        ) {
+                                            Text(
+                                                text = bet.number,
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Black,
+                                                color = CobaltPrimary,
+                                                fontFamily = FontFamily.Monospace,
+                                                letterSpacing = 1.sp,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
+
                                         Text(
                                             "=",
-                                            fontSize = 15.sp,
+                                            fontSize = 13.sp,
                                             color = MaterialTheme.colorScheme.outline,
                                             fontFamily = FontFamily.Monospace,
                                             modifier = Modifier.padding(horizontal = 6.dp)
@@ -688,21 +724,21 @@ fun BettingScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             text = "${String.format("%,d", bet.amount)} Ks",
-                                            fontSize = 14.sp,
+                                            fontSize = 13.5.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = CobaltPrimary,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             fontFamily = FontFamily.Monospace
                                         )
-                                        Spacer(Modifier.width(8.dp))
+                                        Spacer(Modifier.width(6.dp))
                                         IconButton(
                                             onClick = { pendingBets.remove(bet) },
-                                            modifier = Modifier.size(26.dp)
+                                            modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
                                                 Icons.Default.Close,
                                                 contentDescription = "Delete",
-                                                tint = Color(0xFFEF4444),
-                                                modifier = Modifier.size(16.dp)
+                                                tint = Color(0xFFEF4444).copy(alpha = 0.8f),
+                                                modifier = Modifier.size(15.dp)
                                             )
                                         }
                                     }
@@ -713,7 +749,7 @@ fun BettingScreen(
                 }
             }
 
-            // Input Area & Number Pad (Collapsible via toggle)
+            // ── 3. INPUT AREA & NUMBER PAD (Clean Minimal Ergonomics) ─────────────
             AnimatedVisibility(
                 visible = showManualKeypad,
                 enter = fadeIn(),
@@ -723,10 +759,11 @@ fun BettingScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)),
+                    shadowElevation = 2.dp
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
-                        // Dual Display: Number & Amount + Bet Type Toggle Box
+                        // Dual Display: Number & Amount + Bet Type Selector
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -740,62 +777,114 @@ fun BettingScreen(
                                     focusedField = FocusField.NUMBER
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isNumFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                color = if (isNumFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 border = BorderStroke(
                                     width = if (isNumFocused) 2.dp else 1.dp,
-                                    color = if (isNumFocused) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant
+                                    color = if (isNumFocused) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
                                 ),
                                 modifier = Modifier
-                                    .weight(1.1f)
+                                    .weight(1.15f)
                                     .height(44.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
                                     Text(
-                                        text = if (tempNumber.isEmpty()) "ဂဏန်းရိုက်" else tempNumber,
-                                        color = if (tempNumber.isEmpty()) MaterialTheme.colorScheme.outline else CobaltPrimary,
-                                        fontSize = if (tempNumber.isEmpty()) 12.sp else 19.sp,
-                                        fontWeight = FontWeight.ExtraBold,
+                                        text = "ဂဏန်း",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isNumFocused) CobaltPrimary else MaterialTheme.colorScheme.outline
+                                    )
+                                    Text(
+                                        text = if (tempNumber.isEmpty()) "00" else tempNumber,
+                                        color = if (tempNumber.isEmpty()) MaterialTheme.colorScheme.outline.copy(alpha = 0.6f) else CobaltPrimary,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Black,
                                         fontFamily = FontFamily.Monospace,
-                                        letterSpacing = if (tempNumber.isEmpty()) 0.sp else 2.sp,
+                                        letterSpacing = 1.sp,
                                         maxLines = 1
                                     )
                                 }
                             }
 
-                            // Interactive Bet Type Toggle Box
-                            Surface(
-                                onClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    val cycleList = listOf("ဒဲ့", "R", "ပတ်", "အပူး", "ထိပ်", "ပိတ်", "ပါဝါ", "နက္ခတ်", "ညီကို", "ဘရိတ်")
-                                    val nextIdx = (cycleList.indexOf(currentBetType) + 1) % cycleList.size
-                                    currentBetType = cycleList[nextIdx]
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                modifier = Modifier
-                                    .weight(0.9f)
-                                    .height(44.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                            // Interactive Bet Type Toggle Box with Dropdown Menu
+                            Box(modifier = Modifier.weight(0.95f)) {
+                                Surface(
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        expandedBetTypeMenu = true
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp)
                                 ) {
-                                    Text(
-                                        text = currentBetType,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = "အမျိုးအစား",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.outline
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = currentBetType,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                fontSize = 13.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1
+                                            )
+                                            Spacer(Modifier.width(1.dp))
+                                            Icon(
+                                                Icons.Default.ArrowDropDown,
+                                                contentDescription = null,
+                                                tint = CobaltPrimary,
+                                                modifier = Modifier.size(15.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = expandedBetTypeMenu,
+                                    onDismissRequest = { expandedBetTypeMenu = false }
+                                ) {
+                                    val menuOptions = listOf(
+                                        "ဒဲ့", "R", "ထိပ်", "ပိတ်", "ပတ်", "ဘရိတ်", "အပူး", "ပါဝါ", "နက္ခတ်", "ညီကို"
                                     )
-                                    Spacer(Modifier.width(2.dp))
-                                    Icon(
-                                        Icons.Default.ArrowDropDown,
-                                        contentDescription = null,
-                                        tint = CobaltPrimary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                    menuOptions.forEach { opt ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = opt,
+                                                    fontWeight = if (currentBetType == opt) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (currentBetType == opt) CobaltPrimary else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            },
+                                            onClick = {
+                                                currentBetType = opt
+                                                expandedBetTypeMenu = false
+                                                if (opt in listOf("အပူး", "ပါဝါ", "နက္ခတ်", "ညီကို")) {
+                                                    handleSpecial(opt)
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
 
@@ -807,35 +896,48 @@ fun BettingScreen(
                                     focusedField = FocusField.AMOUNT
                                 },
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isAmtFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                color = if (isAmtFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 border = BorderStroke(
                                     width = if (isAmtFocused) 2.dp else 1.dp,
-                                    color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant
+                                    color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
                                 ),
                                 modifier = Modifier
-                                    .weight(1.2f)
+                                    .weight(1.25f)
                                     .height(44.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
-                                        text = tempAmount,
-                                        color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Black,
-                                        fontFamily = FontFamily.Monospace,
-                                        maxLines = 1
+                                        text = "ငွေပမာဏ",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.outline
                                     )
-                                    Spacer(Modifier.width(3.dp))
-                                    Text(
-                                        "Ks",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.outline,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = tempAmount,
+                                            color = if (isAmtFocused) CobaltPrimary else MaterialTheme.colorScheme.onSurface,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Black,
+                                            fontFamily = FontFamily.Monospace,
+                                            maxLines = 1
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Text(
+                                            "Ks",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.outline,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -845,10 +947,10 @@ fun BettingScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
-                                .height(32.dp)
+                                .height(30.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 8.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
@@ -856,7 +958,7 @@ fun BettingScreen(
                                 Text(
                                     "မှတ်ချက် (မထည့်လည်းရသည်)",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
                                 )
                             }
                             BasicTextField(
@@ -889,10 +991,10 @@ fun BettingScreen(
                                     },
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (isSel) CobaltPrimary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    border = BorderStroke(1.dp, if (isSel) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                                    border = BorderStroke(1.dp, if (isSel) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                                     modifier = Modifier.height(28.dp)
                                 ) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 9.dp)) {
                                         Text(
                                             amt,
                                             fontSize = 11.sp,
@@ -925,7 +1027,7 @@ fun BettingScreen(
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 3.dp),
+                                .padding(vertical = 2.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             items(shortcuts.size) { i ->
@@ -936,12 +1038,12 @@ fun BettingScreen(
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         action()
                                     },
-                                    shape = RoundedCornerShape(14.dp),
-                                    color = if (isSelected) CobaltPrimary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                    border = BorderStroke(1.dp, if (isSelected) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isSelected) CobaltPrimary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = BorderStroke(1.dp, if (isSelected) CobaltPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                                     modifier = Modifier.height(28.dp)
                                 ) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp)) {
+                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 9.dp)) {
                                         Text(
                                             label,
                                             fontSize = 11.sp,
@@ -953,7 +1055,7 @@ fun BettingScreen(
                             }
                         }
 
-                        // ── 4x4 Tactile Keypad (Ultra-Realistic 3D Buttons Aligned with 2D) ──
+                        // ── 4x4 Modern Tactile Keypad ──
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -970,7 +1072,7 @@ fun BettingScreen(
                                     subtitle = "အပြန်",
                                     bgColor = CobaltPrimary,
                                     contentColor = Color.White,
-                                    bevelColor = Color(0xFF1E3A8A),
+                                    borderColor = CobaltDark,
                                     modifier = Modifier.weight(1f)
                                 ) { handleSpecial("R") }
                             }
@@ -985,7 +1087,7 @@ fun BettingScreen(
                                     subtitle = "00-99",
                                     bgColor = Color(0xFF0891B2),
                                     contentColor = Color.White,
-                                    bevelColor = Color(0xFF0E7490),
+                                    borderColor = Color(0xFF0E7490),
                                     modifier = Modifier.weight(1f)
                                 ) { handleSpecial("အပူး") }
                             }
@@ -1001,7 +1103,7 @@ fun BettingScreen(
                                     icon = Icons.AutoMirrored.Filled.Backspace,
                                     bgColor = Color(0xFFEF4444),
                                     contentColor = Color.White,
-                                    bevelColor = Color(0xFFB91C1C),
+                                    borderColor = Color(0xFFB91C1C),
                                     modifier = Modifier.weight(1f)
                                 ) { backspace() }
                             }
@@ -1013,7 +1115,7 @@ fun BettingScreen(
                                     subtitle = "Clear",
                                     bgColor = Color(0xFFD97706),
                                     contentColor = Color.White,
-                                    bevelColor = Color(0xFF92400E),
+                                    borderColor = Color(0xFF92400E),
                                     modifier = Modifier.weight(1f)
                                 ) {
                                     handleSpecial("ရှင်းပါ")
@@ -1025,7 +1127,7 @@ fun BettingScreen(
                                     subtitle = "ထည့်မည်",
                                     bgColor = CobaltPrimary,
                                     contentColor = Color.White,
-                                    bevelColor = Color(0xFF1E3A8A),
+                                    borderColor = CobaltDark,
                                     modifier = Modifier.weight(1f)
                                 ) { submit() }
                             }
@@ -1034,6 +1136,7 @@ fun BettingScreen(
                 }
             }
         }
+
 
         // --- QUICK PASTE DIALOG ---
         if (showPasteDialog) {
@@ -1493,15 +1596,16 @@ fun BettingScreen(
     }
 }
 
-// ── Ultra-Realistic Tactile Keypad Button ─────────────────────────────────────
+// ── Modern Minimalist Tactile Keypad Button ──────────────────────────────────
 @Composable
 fun TactileKeypadButton(
     text: String,
     subtitle: String? = null,
     icon: ImageVector? = null,
-    bgColor: Color = Color.White,
-    contentColor: Color = if (bgColor == Color.White) Color(0xFF0F172A) else Color.White,
-    bevelColor: Color = if (bgColor == Color.White) Color(0xFFE2E8F0) else bgColor.copy(alpha = 0.85f),
+    bgColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    bevelColor: Color? = null,
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -1510,57 +1614,40 @@ fun TactileKeypadButton(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val offsetY = if (isPressed) 1.5.dp else 0.dp
-    val elevation = if (isPressed) 1.dp else 2.dp
     val rDimens = rememberResponsiveDimens()
     val buttonHeight = if (rDimens.isCompact) 42.dp else 46.dp
 
-    Box(
+    Surface(
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(10.dp),
+        color = if (isPressed) bgColor.copy(alpha = 0.88f) else bgColor,
+        border = BorderStroke(1.dp, if (isPressed) borderColor else borderColor.copy(alpha = 0.6f)),
+        shadowElevation = if (isPressed) 0.dp else 1.dp,
         modifier = modifier
             .height(buttonHeight)
-            .padding(horizontal = 1.dp, vertical = 0.5.dp)
+            .padding(1.dp)
             .offset(y = offsetY)
-            .shadow(elevation, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(bgColor, bevelColor)
-                )
-            )
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = if (isPressed) 0.15f else 0.5f),
-                        Color.Black.copy(alpha = 0.12f)
-                    )
-                ),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(color = Color.White.copy(alpha = 0.3f)),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                }
-            ),
-        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = text,
                     tint = contentColor,
-                    modifier = Modifier.size(17.dp)
+                    modifier = Modifier.size(19.dp)
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        fontSize = 8.sp,
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = contentColor.copy(alpha = 0.85f)
                     )
@@ -1568,8 +1655,8 @@ fun TactileKeypadButton(
             } else {
                 Text(
                     text = text,
-                    fontSize = if (text.length > 2) 12.sp else 16.sp,
-                    fontWeight = FontWeight.Black,
+                    fontSize = if (text.length > 2) 13.sp else 17.sp,
+                    fontWeight = FontWeight.Bold,
                     color = contentColor,
                     fontFamily = if (text.all { it.isDigit() }) FontFamily.Monospace else FontFamily.Default,
                     letterSpacing = if (text.all { it.isDigit() }) 1.sp else 0.sp
@@ -1577,7 +1664,7 @@ fun TactileKeypadButton(
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        fontSize = 8.sp,
+                        fontSize = 8.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = contentColor.copy(alpha = 0.85f)
                     )
