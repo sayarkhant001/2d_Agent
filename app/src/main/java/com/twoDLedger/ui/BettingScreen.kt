@@ -50,9 +50,9 @@ import com.twoDLedger.ui.theme.*
 import kotlinx.coroutines.launch
 
 enum class FocusField { NUMBER, AMOUNT }
-private val BettingPrimary = Color(0xFF046A4E)          // Imperial Emerald
-private val BettingPrimaryContainer = Color(0xFFDCFCE7) // Soft Mint Container
-private val BettingOnPrimaryContainer = Color(0xFF013828)
+private val BettingPrimary = CobaltPrimary          // 2D Royal Cobalt Blue (0xFF1D4ED8)
+private val BettingPrimaryContainer = CobaltLight // 2D Soft Ice Blue Container (0xFFDBEAFE)
+private val BettingOnPrimaryContainer = CobaltDark // 2D Deep Navy Container (0xFF1E3A8A)
 private val BettingGoldContainer = Color(0xFFFEF3C7)    // Soft Amber Chip
 private val BettingGoldText = Color(0xFF92400E)
 
@@ -87,7 +87,7 @@ fun BettingScreen(
     var detectedClipboardText by remember { mutableStateOf<String?>(null) }
 
     // Keypad and Input state
-    var showManualKeypad by remember { mutableStateOf(true) }
+    var showManualKeypad by remember { mutableStateOf(false) }
     var currentBetType by remember { mutableStateOf("ဒဲ့") }
     var expandedBetTypeMenu by remember { mutableStateOf(false) }
     var focusedField by remember { mutableStateOf(FocusField.NUMBER) }
@@ -111,6 +111,7 @@ fun BettingScreen(
             showClearConfirmDialog -> showClearConfirmDialog = false
             showPasteDialog -> showPasteDialog = false
             pasteErrors.isNotEmpty() -> pasteErrors = emptyList()
+            showManualKeypad -> showManualKeypad = false
             else -> onNavigateBack()
         }
     }
@@ -410,6 +411,7 @@ fun BettingScreen(
         tempRemark = ""
         pendingBets.clear()
         clearAll()
+        showManualKeypad = false
         showBetConfirmDialog = false
         android.widget.Toast.makeText(context, "ဘောင်ချာ သိမ်းဆည်းပြီးပါပြီ", android.widget.Toast.LENGTH_SHORT).show()
     }
@@ -615,7 +617,14 @@ fun BettingScreen(
             // ── Rows or Empty State ───────────────────────────────────────────
             if (pendingBets.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            showManualKeypad = true
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {

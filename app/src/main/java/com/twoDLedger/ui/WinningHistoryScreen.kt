@@ -89,7 +89,7 @@ fun WinningHistoryScreen(
             if (historyList.isEmpty() && isFetching) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = EmeraldPrimary)
+                        CircularProgressIndicator(color = CobaltPrimary)
                         Spacer(Modifier.height(12.dp))
                         Text(
                             "ရလဒ်မှတ်တမ်းများ ရယူနေပါသည်...",
@@ -143,7 +143,7 @@ fun HistoryDayCard(record: WinningHistory) {
                         modifier = Modifier
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(EmeraldPrimary)
+                            .background(CobaltPrimary)
                     )
                     Text(
                         text = record.date,

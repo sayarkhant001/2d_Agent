@@ -119,7 +119,7 @@ fun HomeScreen(
             title = "ကော်မရှင်",
             subtitle = "စာရင်းသွင်းသူများ",
             icon = Icons.Default.People,
-            iconColors = listOf(Color(0xFF059669), Color(0xFF047857)),
+            iconColors = listOf(Color(0xFF0284C7), Color(0xFF0369A1)),
             onClick = onNavigateToCustomers
         ),
         MenuItem(
@@ -268,7 +268,7 @@ fun HomeScreen(
                         // 12:00 PM (Noon)
                         val isNoon = currentSession == "12:00 PM"
                         val noonBg by animateColorAsState(
-                            targetValue = if (isNoon) EmeraldPrimary else Color.Transparent,
+                            targetValue = if (isNoon) CobaltPrimary else Color.Transparent,
                             animationSpec = tween(250, easing = FastOutSlowInEasing),
                             label = "noonBg"
                         )
@@ -298,7 +298,7 @@ fun HomeScreen(
                         // 4:30 PM (Evening)
                         val isEvening = currentSession == "4:30 PM"
                         val eveningBg by animateColorAsState(
-                            targetValue = if (isEvening) EmeraldPrimary else Color.Transparent,
+                            targetValue = if (isEvening) CobaltPrimary else Color.Transparent,
                             animationSpec = tween(250, easing = FastOutSlowInEasing),
                             label = "eveningBg"
                         )
@@ -401,7 +401,7 @@ fun HomeScreen(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Black,
                                     fontFamily = FontFamily.Monospace,
-                                    color = EmeraldPrimary
+                                    color = CobaltPrimary
                                 )
                             }
                         }
@@ -543,7 +543,7 @@ fun HomeScreen(
                         }
                         .shadow(if (heroIsPressed) 2.dp else 6.dp, RoundedCornerShape(20.dp)),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = EmeraldPrimary)
+                    colors = CardDefaults.cardColors(containerColor = CobaltPrimary)
                 ) {
                     Box(
                         modifier = Modifier
@@ -552,7 +552,7 @@ fun HomeScreen(
                                 Brush.horizontalGradient(
                                     colors = listOf(
                                         Color(0xFF1D4ED8),
-                                        Color(0xFF2563EB)
+                                        Color(0xFF0284C7)
                                     )
                                 )
                             )
@@ -813,7 +813,7 @@ fun MenuCard(
         shape = RoundedCornerShape(20.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (isPressed) EmeraldPrimary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            if (isPressed) CobaltPrimary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {

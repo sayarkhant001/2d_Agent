@@ -67,7 +67,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Disabled — enforce our premium Emerald-Gold palette
+    dynamicColor: Boolean = false, // Disabled — enforce our signature 2D Royal Cobalt & Electric Cyan palette
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

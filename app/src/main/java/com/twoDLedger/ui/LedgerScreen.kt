@@ -190,13 +190,13 @@ fun LedgerScreen(
                             }
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (exactWonBetsSum > 0) EmeraldLight else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (exactWonBetsSum > 0) EmeraldMedium.copy(alpha = 0.35f) else Color.Transparent)
+                                color = if (exactWonBetsSum > 0) CobaltLight else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (exactWonBetsSum > 0) CobaltMedium.copy(alpha = 0.35f) else Color.Transparent)
                             ) {
                                 Text(
                                     if (exactWonBetsSum > 0) "ဒဲ့ပေါက် %,d Ks".format(exactWonBetsSum)
                                     else "ပေါက်သီး မရှိပါ",
-                                    color = if (exactWonBetsSum > 0) EmeraldDark else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (exactWonBetsSum > 0) CobaltDark else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
@@ -298,12 +298,12 @@ fun LedgerScreen(
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = Color.White,
-                                    border = BorderStroke(1.dp, EmeraldMedium.copy(alpha = 0.4f)),
+                                    border = BorderStroke(1.dp, CobaltMedium.copy(alpha = 0.4f)),
                                     shadowElevation = 1.dp
                                 ) {
                                     Text(
                                         exposure.number,
-                                        color = EmeraldPrimary,
+                                        color = CobaltPrimary,
                                         fontWeight = FontWeight.Black,
                                         fontSize = 18.sp,
                                         fontFamily = FontFamily.Monospace,

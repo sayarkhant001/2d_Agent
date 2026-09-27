@@ -357,7 +357,7 @@ fun CustomerCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(
             1.dp,
-            if (isPressed) EmeraldPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+            if (isPressed) CobaltPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 1.dp else 2.dp)
     ) {

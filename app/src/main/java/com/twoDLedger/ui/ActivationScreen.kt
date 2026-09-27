@@ -321,8 +321,8 @@ fun ActivationScreen(
                     if (migrationNotice != null) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFECFDF5)),
-                            border = BorderStroke(1.5.dp, EmeraldPrimary),
+                            colors = CardDefaults.cardColors(containerColor = CobaltLight.copy(alpha = 0.5f)),
+                            border = BorderStroke(1.5.dp, CobaltPrimary),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 18.dp)
@@ -334,7 +334,7 @@ fun ActivationScreen(
                                 Icon(
                                     Icons.Default.CheckCircle,
                                     contentDescription = "Success",
-                                    tint = EmeraldPrimary,
+                                    tint = CobaltPrimary,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(Modifier.width(10.dp))
@@ -342,7 +342,7 @@ fun ActivationScreen(
                                     text = migrationNotice!!,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = EmeraldDark
+                                    color = CobaltDark
                                 )
                             }
                         }

@@ -267,7 +267,7 @@ fun WinnerScreen(
                                             alpha = pulseAlpha
                                         }
                                         .clip(CircleShape)
-                                        .background(EmeraldPrimary)
+                                        .background(CobaltPrimary)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
@@ -545,7 +545,7 @@ fun WinnerScreen(
                                     Text(
                                         text = "အထက်ဒိုင် ပြန်ရငွေ: ${String.format("%,.0f", totalOverflowPayout)} Ks",
                                         fontSize = 11.sp,
-                                        color = EmeraldPrimary
+                                        color = CobaltPrimary
                                     )
                                     Text(
                                         text = "ဒိုင်အသားတင်လျော်ငွေ: ${String.format("%,.0f", netDeductiblePayout)} Ks",
@@ -703,7 +703,7 @@ fun SlotCard(
             Text(
                 text = label,
                 fontSize = 9.sp,
-                color = if (isOfficial) EmeraldPrimary else TextMuted
+                color = if (isOfficial) CobaltPrimary else TextMuted
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
@@ -851,7 +851,7 @@ fun OverflowCard(item: OverflowWinResult, modifier: Modifier = Modifier) {
                 text = "+${String.format("%,.0f", item.payoutAmount)} Ks",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = EmeraldPrimary
+                color = CobaltPrimary
             )
         }
     }

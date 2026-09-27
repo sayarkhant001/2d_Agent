@@ -54,12 +54,12 @@ class ExampleUnitTest {
     @Test
     fun testTwoDBetParser() {
         // Direct bet
-        val bets1 = TwoDBetParser.parseLine("12 500")
+        val bets1 = TwoDBetParser.parseLine("12 = 500")
         assertEquals(1, bets1.size)
         assertEquals("12" to 500, bets1.first())
 
         // R bet
-        val betsR = TwoDBetParser.parseLine("12R 500")
+        val betsR = TwoDBetParser.parseLine("12R = 500")
         assertEquals(2, betsR.size)
         assertTrue(betsR.contains("12" to 500))
         assertTrue(betsR.contains("21" to 500))

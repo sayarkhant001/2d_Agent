@@ -266,7 +266,7 @@ fun ExportHistoryBottomBar(
                         text = "နှိပ်၍ အထက်ဒိုင် ရှင်းတမ်း ကြည့်ရန် ▶",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = EmeraldPrimary
+                        color = CobaltPrimary
                     )
                 }
             }
@@ -656,7 +656,7 @@ fun UpperAgentSettlementDialog(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(32.dp).clip(CircleShape).background(EmeraldPrimary),
+                        Modifier.size(32.dp).clip(CircleShape).background(CobaltPrimary),
                         Alignment.Center
                     ) {
                         Icon(Icons.Default.AccountBalance, null, tint = Color.White, modifier = Modifier.size(17.dp))
@@ -716,7 +716,7 @@ fun UpperAgentSettlementDialog(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(5.dp))
                                     .background(MaterialTheme.colorScheme.surface)
-                                    .border(0.8.dp, EmeraldPrimary.copy(alpha = 0.5f), RoundedCornerShape(5.dp))
+                                    .border(0.8.dp, CobaltPrimary.copy(alpha = 0.5f), RoundedCornerShape(5.dp))
                                     .padding(horizontal = 4.dp, vertical = 2.dp)
                             ) {
                                 BasicTextField(
@@ -737,7 +737,7 @@ fun UpperAgentSettlementDialog(
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                                 )
-                                Text("%", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = EmeraldPrimary)
+                                Text("%", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = CobaltPrimary)
                             }
                         }
                         Text(
@@ -758,7 +758,7 @@ fun UpperAgentSettlementDialog(
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.ExtraBold,
                             fontFamily = FontFamily.Monospace,
-                            color = EmeraldPrimary
+                            color = CobaltPrimary
                         )
                     }
                 }
@@ -854,17 +854,17 @@ fun UpperAgentSettlementDialog(
                 val isToReceive = netBalance > 0
                 val isToPay = netBalance < 0
                 val resultBg = when {
-                    isToReceive -> EmeraldLight
+                    isToReceive -> CobaltLight
                     isToPay -> WinExactBg
                     else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 }
                 val resultBorder = when {
-                    isToReceive -> EmeraldPrimary
+                    isToReceive -> CobaltPrimary
                     isToPay -> WinExactRed
                     else -> Color.Gray
                 }
                 val resultColor = when {
-                    isToReceive -> EmeraldDark
+                    isToReceive -> CobaltDark
                     isToPay -> WinExactRed
                     else -> MaterialTheme.colorScheme.onSurface
                 }
@@ -938,7 +938,7 @@ fun UpperAgentSettlementDialog(
                     modifier = Modifier.weight(1f).height(36.dp),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary)
                 ) {
                     Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))

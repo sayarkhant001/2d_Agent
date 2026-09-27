@@ -39,16 +39,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twoDLedger.data.Customer
 import com.twoDLedger.ui.theme.*
 
-// ── Palette (Harmonized Emerald-Gold) ──────────────────────────────────────────
-private val ResPrimary     = EmeraldPrimary
-private val ResDark        = EmeraldDark
-private val ResMintBg      = EmeraldSoftBg
+// ── Palette (2D Signature Royal Cobalt & Solar Gold) ──────────────────────────
+private val ResPrimary     = CobaltPrimary
+private val ResDark        = CobaltDark
+private val ResMintBg      = CobaltSoftBg
 private val ResGold        = GoldAccent
 private val ResGoldBg      = GoldContainer
 private val ResRed         = WinExactRed
 private val ResRedBg       = WinExactBg
-private val ResGreen       = Color(0xFF059669)
-private val ResGreenBg     = EmeraldLight
+private val ResGreen       = CobaltPrimary
+private val ResGreenBg     = CobaltLight
 
 // ── Data model ─────────────────────────────────────────────────────────────────
 data class TutWinDetail(
