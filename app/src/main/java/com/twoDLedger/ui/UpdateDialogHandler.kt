@@ -199,7 +199,7 @@ fun UpdateDialogHandler(owner: String, repo: String) {
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            val tgUrl = "https://t.me/threed_ledger_bot?start=download"
+                            val tgUrl = "https://t.me/twoDLedger2026bot?start=download"
                             try {
                                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(tgUrl)).apply {
                                     addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -292,7 +292,7 @@ fun UpdateDialogHandler(owner: String, repo: String) {
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    val tgUrl = "https://t.me/threed_ledger_bot?start=download"
+                                    val tgUrl = "https://t.me/twoDLedger2026bot?start=download"
                                     try {
                                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(tgUrl)).apply {
                                             addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)

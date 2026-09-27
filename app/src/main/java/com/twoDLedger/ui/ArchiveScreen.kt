@@ -87,9 +87,10 @@ fun ArchiveScreen(
                     ArchiveTotalsBar(batches)
                 }
                 // One card per batch
-                items(batches) { batch ->
+                items(batches, key = { it.batchNumber }) { batch ->
                     ArchiveBatchCard(
                         batch = batch,
+                        modifier = Modifier.animateItem(),
                         onViewResult = { onNavigateToBatchResult(batch.batchNumber) }
                     )
                 }
@@ -149,10 +150,11 @@ private fun VerticalDividerLine() {
 @Composable
 private fun ArchiveBatchCard(
     batch: ArchiveBatchSummary,
+    modifier: Modifier = Modifier,
     onViewResult: () -> Unit = {}
 ) {
     Card(
-        modifier  = Modifier.fillMaxWidth(),
+        modifier  = modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(16.dp),
         colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp)

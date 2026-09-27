@@ -1082,7 +1082,17 @@ export async function handleLicenseActivate(request: Request, env: Env): Promise
 
     // If key is active:
     if (keyData.status === 'active') {
-      if (keyData.device_fingerprint === device_fingerprint) {
+      const isDevFallback = !keyData.device_fingerprint || keyData.device_fingerprint.startsWith('dev_');
+      if (keyData.device_fingerprint === device_fingerprint || isDevFallback) {
+        if (isDevFallback && keyData.device_fingerprint !== device_fingerprint) {
+          try {
+            await fetch(`${env.FIREBASE_DB_URL}/2d_licenses/keys/${resolvedCdKey}.json`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ device_fingerprint, device_model })
+            });
+          } catch (_) {}
+        }
         // Re-issue token to current bound device
         const nowSec = Math.floor(Date.now() / 1000);
         let expSec: number | undefined = undefined;

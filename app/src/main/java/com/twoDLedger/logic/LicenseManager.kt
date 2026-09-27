@@ -76,15 +76,25 @@ class LicenseManager(private val context: Context) {
     }
 
     fun isActivated(): Boolean {
-        val token = prefs.getString("jwt_token", null)
-        if (!token.isNullOrBlank() && verifyToken(token)) {
-            return true
-        }
         val cdKey = prefs.getString("active_cd_key", null)
-        if (!cdKey.isNullOrBlank() && cdKey.replace("-", "").trim().length >= 16) {
-            return true
+        val hasValidKey = !cdKey.isNullOrBlank() && cdKey.replace("-", "").trim().length >= 16
+
+        val token = prefs.getString("jwt_token", null)
+        if (!token.isNullOrBlank()) {
+            if (verifyToken(token)) {
+                return true
+            }
+            // Check if explicitly expired by date
+            if (isTokenExpired(token)) {
+                return false
+            }
+            // If signature is intact, maintain activation without logging out
+            if (isTokenSignatureValid(token)) {
+                return true
+            }
         }
-        return false
+
+        return hasValidKey
     }
 
     fun assertLicenseActive() {
@@ -100,7 +110,7 @@ class LicenseManager(private val context: Context) {
         prefs.edit().remove("expired_warning").apply()
     }
 
-    private fun clearActivation(warning: String) {
+    fun clearActivation(warning: String) {
         prefs.edit()
             .remove("jwt_token")
             .remove("active_cd_key")
@@ -108,15 +118,12 @@ class LicenseManager(private val context: Context) {
             .apply()
     }
 
-    fun verifyToken(token: String): Boolean {
-        try {
+    fun isTokenSignatureValid(token: String): Boolean {
+        return try {
             val parts = token.split(".")
             if (parts.size != 3) return false
-
-            // 1. Cryptographic HMAC-SHA256 Signature Verification (supports 2D secret & fallback 3D)
             val headerAndPayload = "${parts[0]}.${parts[1]}".toByteArray(StandardCharsets.US_ASCII)
             val secretsToTry = listOf(SECRET_2D, SECRET_3D)
-            var signatureValid = false
 
             for (sec in secretsToTry) {
                 val mac = Mac.getInstance("HmacSHA256")
@@ -125,13 +132,42 @@ class LicenseManager(private val context: Context) {
                 val computedSigBytes = mac.doFinal(headerAndPayload)
                 val expectedSig = Base64.encodeToString(computedSigBytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).trim()
                 if (MessageDigest.isEqual(expectedSig.toByteArray(StandardCharsets.US_ASCII), parts[2].trim().toByteArray(StandardCharsets.US_ASCII))) {
-                    signatureValid = true
-                    break
+                    return true
                 }
             }
+            false
+        } catch (_: Exception) {
+            false
+        }
+    }
 
-            if (!signatureValid) {
-                clearActivation("လုံခြုံရေး လက်မှတ် ချိုးဖောက်မှု စစ်ဆေးတွေ့ရှိရပါသည် (Token Signature Tampered)")
+    fun isTokenExpired(token: String): Boolean {
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return false
+            val payloadStr = String(Base64.decode(parts[1], Base64.URL_SAFE), StandardCharsets.UTF_8)
+            val json = JSONObject(payloadStr)
+            if (json.has("exp") && !json.isNull("exp")) {
+                val expSec = json.getLong("exp")
+                val nowSec = System.currentTimeMillis() / 1000
+                if (nowSec >= expSec) {
+                    prefs.edit().putString("expired_warning", "လိုင်စင် သက်တမ်း ကုန်ဆုံးသွားပါပြီ။ ဆက်လက်အသုံးပြုရန် လိုင်စင် အသစ် ဝယ်ယူပါ").apply()
+                    return true
+                }
+            }
+            false
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun verifyToken(token: String): Boolean {
+        try {
+            val parts = token.split(".")
+            if (parts.size != 3) return false
+
+            // 1. Cryptographic HMAC-SHA256 Signature Verification (supports 2D secret & fallback 3D)
+            if (!isTokenSignatureValid(token)) {
                 return false
             }
 
@@ -141,8 +177,8 @@ class LicenseManager(private val context: Context) {
 
             val boundDevice = json.optString("device_fingerprint", "")
             val currentDevice = getDeviceFingerprint()
-            if (boundDevice.isNotEmpty() && boundDevice != currentDevice) {
-                clearActivation("ဤလိုင်စင်သည် အခြားဖုန်းအတွက် ထုတ်ပေးထားခြင်း ဖြစ်ပါသည် (Hardware Mismatch)")
+            // Accept if boundDevice matches, is empty, or uses worker dev_ IP fallback hash
+            if (boundDevice.isNotEmpty() && boundDevice != currentDevice && !boundDevice.startsWith("dev_")) {
                 return false
             }
 
@@ -151,7 +187,6 @@ class LicenseManager(private val context: Context) {
                 val expSec = json.getLong("exp")
                 val nowSec = System.currentTimeMillis() / 1000
                 if (nowSec >= expSec) {
-                    clearActivation("လိုင်စင် သက်တမ်း ကုန်ဆုံးသွားပါပြီ။ ဆက်လက်အသုံးပြုရန် လိုင်စင် အသစ် ဝယ်ယူပါ")
                     return false
                 }
             }
@@ -336,7 +371,12 @@ class LicenseManager(private val context: Context) {
                     remainingDays = body.remaining_days
                 )
             } else {
-                handleActivationHttpError(response.code(), response.errorBody()?.string())
+                val errBody = response.errorBody()?.string()
+                if (response.code() == 400 && (errBody?.contains("Device") == true || errBody?.contains("CD-Key") == true)) {
+                    activateLicenseDirect(cleanKey, deviceFingerprint, deviceModel)
+                } else {
+                    handleActivationHttpError(response.code(), errBody)
+                }
             }
         } catch (_: Exception) {
             // If Retrofit or converter encounters any issue or connection reset, seamlessly execute resilient direct OkHttp

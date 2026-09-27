@@ -20,7 +20,7 @@ import java.util.Locale
 
 /**
  * SecurityGuard: Enterprise-grade Anti-Tampering, Anti-Resigning, Anti-Frida/Hooking,
- * and Anti-Debugging shield for 3D Ledger.
+ * and Anti-Debugging shield for 2D Ledger.
  *
  * Protects against:
  * 1. MT Manager / APK Editor / Bytecode patchers (re-signing detection via SHA-256 certificate validation).

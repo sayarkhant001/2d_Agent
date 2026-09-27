@@ -25,6 +25,11 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,7 +107,7 @@ fun HomeScreen(
         ),
         MenuItem(
             title = "ဂဏန်းများ",
-            subtitle = "ပေါက်/တွတ် စစ်ဆေးချက်",
+            subtitle = "ပေါက်ဂဏန်း စစ်ဆေးချက်",
             icon = Icons.AutoMirrored.Filled.List,
             iconColors = listOf(Color(0xFF2563EB), Color(0xFF1D4ED8)),
             onClick = onNavigateToLedger
@@ -238,13 +243,18 @@ fun HomeScreen(
                     ) {
                         // 12:00 PM (Noon)
                         val isNoon = currentSession == "12:00 PM"
+                        val noonBg by animateColorAsState(
+                            targetValue = if (isNoon) EmeraldPrimary else Color.Transparent,
+                            animationSpec = tween(250, easing = FastOutSlowInEasing),
+                            label = "noonBg"
+                        )
                         Surface(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 viewModel.setSession("12:00 PM")
                             },
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isNoon) EmeraldPrimary else Color.Transparent,
+                            color = noonBg,
                             modifier = Modifier.weight(1f)
                         ) {
                             Row(
@@ -263,13 +273,18 @@ fun HomeScreen(
 
                         // 4:30 PM (Evening)
                         val isEvening = currentSession == "4:30 PM"
+                        val eveningBg by animateColorAsState(
+                            targetValue = if (isEvening) EmeraldPrimary else Color.Transparent,
+                            animationSpec = tween(250, easing = FastOutSlowInEasing),
+                            label = "eveningBg"
+                        )
                         Surface(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 viewModel.setSession("4:30 PM")
                             },
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isEvening) EmeraldPrimary else Color.Transparent,
+                            color = eveningBg,
                             modifier = Modifier.weight(1f)
                         ) {
                             Row(
@@ -312,13 +327,43 @@ fun HomeScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "livePulse")
+                        val pulseScale by infiniteTransition.animateFloat(
+                            initialValue = 0.85f,
+                            targetValue = 1.30f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(900, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "pulseScale"
+                        )
+                        val pulseAlpha by infiniteTransition.animateFloat(
+                            initialValue = 0.45f,
+                            targetValue = 1.0f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(900, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "pulseAlpha"
+                        )
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF10B981)))
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .graphicsLayer {
+                                            scaleX = pulseScale
+                                            scaleY = pulseScale
+                                            alpha = pulseAlpha
+                                        }
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                )
                                 Text(
                                     text = "🇹🇭 Thai Stock (SET) Live",
                                     fontSize = 11.5.sp,
@@ -440,14 +485,27 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // ── Hero Action Card: "ထိုးကြေး စာရင်းသွင်းမည်" (Direct Betting Entry) ────
+                val heroInteractionSource = remember { MutableInteractionSource() }
+                val heroIsPressed by heroInteractionSource.collectIsPressedAsState()
+                val heroScale by animateFloatAsState(
+                    targetValue = if (heroIsPressed) 0.96f else 1.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    label = "heroScale"
+                )
+
                 Card(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onNavigateToBetting()
                     },
+                    interactionSource = heroInteractionSource,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(6.dp, RoundedCornerShape(20.dp)),
+                        .graphicsLayer {
+                            scaleX = heroScale
+                            scaleY = heroScale
+                        }
+                        .shadow(if (heroIsPressed) 2.dp else 6.dp, RoundedCornerShape(20.dp)),
                     shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = EmeraldPrimary)
                 ) {
@@ -583,14 +641,27 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // ── Settings & Preferences Navigation Card ───────────────────
+                val settingsInteractionSource = remember { MutableInteractionSource() }
+                val settingsIsPressed by settingsInteractionSource.collectIsPressedAsState()
+                val settingsScale by animateFloatAsState(
+                    targetValue = if (settingsIsPressed) 0.96f else 1.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    label = "settingsScale"
+                )
+
                 Card(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onNavigateToSettings()
                     },
+                    interactionSource = settingsInteractionSource,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(2.dp, RoundedCornerShape(18.dp)),
+                        .graphicsLayer {
+                            scaleX = settingsScale
+                            scaleY = settingsScale
+                        }
+                        .shadow(if (settingsIsPressed) 1.dp else 2.dp, RoundedCornerShape(18.dp)),
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -657,14 +728,30 @@ fun MenuCard(
     onClick: () -> Unit
 ) {
     val rDimens = rememberResponsiveDimens()
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.93f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "menuCardScale"
+    )
+
     Card(
         onClick = onClick,
+        interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = if (rDimens.isCompact) 112.dp else 124.dp)
-            .shadow(2.dp, RoundedCornerShape(20.dp)),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .shadow(if (isPressed) 1.dp else 3.dp, RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (isPressed) EmeraldPrimary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(

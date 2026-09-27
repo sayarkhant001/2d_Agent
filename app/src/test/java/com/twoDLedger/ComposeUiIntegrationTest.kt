@@ -9,7 +9,6 @@ import androidx.compose.ui.test.performClick
 import com.twoDLedger.data.Customer
 import com.twoDLedger.ui.AgentSettlement
 import com.twoDLedger.ui.AgentSettlementCard
-import com.twoDLedger.ui.KeypadButton
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -23,22 +22,6 @@ class ComposeUiIntegrationTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
-
-    @Test
-    fun testKeypadButtonClicks() {
-        var clicked = false
-        composeTestRule.setContent {
-            KeypadButton(
-                text = "ထွိုင်",
-                bgColor = Color(0xFF059669),
-                onClick = { clicked = true }
-            )
-        }
-
-        composeTestRule.onNodeWithText("ထွိုင်").assertIsDisplayed()
-        composeTestRule.onNodeWithText("ထွိုင်").performClick()
-        assertTrue("Keypad button click triggered", clicked)
-    }
 
     @Test
     fun testAgentSettlementCardReceivable() {
@@ -207,24 +190,6 @@ class ComposeUiIntegrationTest {
         composeTestRule.onNodeWithText("အကြိမ် (15) တင်ငွေ စုစုပေါင်း", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("ဘောင်ချာ (1) စောင် • (6) ဂဏန်း", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("16,000 Ks").assertIsDisplayed()
-    }
-
-    @Test
-    fun testTactileKeypadButtonWithSubtitle() {
-        var clicked = false
-        composeTestRule.setContent {
-            com.twoDLedger.ui.TactileKeypadButton(
-                text = "R",
-                subtitle = "ပတ်လည်",
-                bgColor = Color(0xFF059669),
-                onClick = { clicked = true }
-            )
-        }
-
-        composeTestRule.onNodeWithText("R").assertIsDisplayed()
-        composeTestRule.onNodeWithText("ပတ်လည်").assertIsDisplayed()
-        composeTestRule.onNodeWithText("R").performClick()
-        assertTrue("Tactile keypad button click triggered", clicked)
     }
 
     @Test

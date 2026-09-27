@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -281,6 +282,7 @@ fun BettingScreen(
             "ဒဲ့" -> if (digits.length == 2) addBets(listOf(digits))
             "ထိပ်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.head(num))
             "နောက်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.tail(num))
+            "ပတ်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.roll(num))
             "ဘရိတ်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.breakNum(num))
             else -> if (digits.length == 2) addBets(listOf(digits))
         }
@@ -291,6 +293,9 @@ fun BettingScreen(
         val digits = tempNumber
         when (cmd) {
             "R" -> if (digits.length == 2) addBets(TwoDNumberGenerator.reverse(digits))
+            "ပတ်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.roll(num))
+            "ထိပ်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.head(num))
+            "နောက်" -> if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.tail(num))
             "အပူး" -> addBets(TwoDNumberGenerator.doubleNumbers())
             "ပါဝါ" -> addBets(TwoDNumberGenerator.power())
             "နက္ခတ်" -> addBets(TwoDNumberGenerator.natkhat())
@@ -492,9 +497,9 @@ fun BettingScreen(
                             .padding(horizontal = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(pendingBets.reversed()) { bet ->
+                        items(pendingBets.reversed(), key = { "${it.number}_${it.amount}_${pendingBets.indexOf(it)}" }) { bet ->
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().animateItem(),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = CardDefaults.cardColors(containerColor = SlateSurface),
                                 border = BorderStroke(0.5.dp, CardBorder)
@@ -543,19 +548,22 @@ fun BettingScreen(
                 border = BorderStroke(1.dp, CardBorder)
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
-                    // Quick Bet / Shortcut Chips: ဒဲ့, R, အပူး, ထိပ်, နောက်, ပါဝါ, နက္ခတ်, ညီကို, စုံစုံ, မမ, ဘရိတ်
+                    // Quick Bet / Shortcut Chips: ဒဲ့, R, ပတ်, အပူး, ထိပ်, နောက်, ပါဝါ, နက္ခတ်, ညီကို, စုံစုံ, မမ, စုံမ, မစုံ, ဘရိတ်
                     val shortcuts = listOf(
                         Triple("ဒဲ့", true, { currentBetType = "ဒဲ့" }),
                         Triple("R (ပြန်)", false, { handleSpecial("R") }),
+                        Triple("ပတ် (အပါ)", true, { currentBetType = "ပတ်"; if (tempNumber.length == 1) handleSpecial("ပတ်") }),
                         Triple("အပူး", false, { handleSpecial("အပူး") }),
-                        Triple("ထိပ်", true, { currentBetType = "ထိပ်" }),
-                        Triple("နောက်", true, { currentBetType = "နောက်" }),
+                        Triple("ထိပ်", true, { currentBetType = "ထိပ်"; if (tempNumber.length == 1) handleSpecial("ထိပ်") }),
+                        Triple("နောက်", true, { currentBetType = "နောက်"; if (tempNumber.length == 1) handleSpecial("နောက်") }),
                         Triple("ပါဝါ", false, { handleSpecial("ပါဝါ") }),
                         Triple("နက္ခတ်", false, { handleSpecial("နက္ခတ်") }),
                         Triple("ညီကို", false, { handleSpecial("ညီကို") }),
                         Triple("စုံစုံ", false, { handleSpecial("စုံစုံ") }),
                         Triple("မမ", false, { handleSpecial("မမ") }),
-                        Triple("ဘရိတ်", false, { handleSpecial("ဘရိတ်") })
+                        Triple("စုံမ", false, { handleSpecial("စုံမ") }),
+                        Triple("မစုံ", false, { handleSpecial("မစုံ") }),
+                        Triple("ဘရိတ်", true, { currentBetType = "ဘရိတ်"; if (tempNumber.length == 1) handleSpecial("ဘရိတ်") })
                     )
 
                     LazyRow(
@@ -895,13 +903,30 @@ fun PadKey(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessHigh
+        ),
+        label = "padKeyScale"
+    )
+
     Surface(
         onClick = onClick,
-        modifier = modifier.height(44.dp),
+        interactionSource = interactionSource,
+        modifier = modifier
+            .height(44.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
         shape = RoundedCornerShape(10.dp),
-        color = SlateDarkBackground,
-        border = BorderStroke(1.dp, CardBorder),
-        shadowElevation = 1.dp
+        color = if (isPressed) PrimaryGold.copy(alpha = 0.25f) else SlateDarkBackground,
+        border = BorderStroke(1.dp, if (isPressed) PrimaryGold else CardBorder),
+        shadowElevation = if (isPressed) 0.dp else 1.dp
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(
@@ -909,7 +934,7 @@ fun PadKey(
                 fontSize = 19.sp,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace,
-                color = TextPrimary
+                color = if (isPressed) PrimaryGold else TextPrimary
             )
         }
     }
@@ -924,12 +949,29 @@ fun PadActionKey(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPressed) 0.90f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessHigh
+        ),
+        label = "padActionScale"
+    )
+
     Surface(
         onClick = onClick,
-        modifier = modifier.height(44.dp),
+        interactionSource = interactionSource,
+        modifier = modifier
+            .height(44.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
         shape = RoundedCornerShape(10.dp),
-        color = bgColor,
-        shadowElevation = 2.dp
+        color = if (isPressed) bgColor.copy(alpha = 0.82f) else bgColor,
+        shadowElevation = if (isPressed) 0.dp else 2.dp
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

@@ -1,5 +1,6 @@
 package com.twoDLedger.network
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import retrofit2.Response
 import retrofit2.http.Body
@@ -7,65 +8,65 @@ import retrofit2.http.POST
 
 @JsonClass(generateAdapter = true)
 data class ActivationRequest(
-    val cd_key: String,
-    val device_fingerprint: String,
-    val device_model: String? = null
+    @field:Json(name = "cd_key") val cd_key: String,
+    @field:Json(name = "device_fingerprint") val device_fingerprint: String,
+    @field:Json(name = "device_model") val device_model: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class ActivationResponse(
-    val status: String? = null,
-    val token: String? = null,
-    val expires_at: Long? = null,
-    val device_migrated: Boolean? = null,
-    val remaining_days: Int? = null,
-    val message: String? = null,
-    val error: String? = null
+    @field:Json(name = "status") val status: String? = null,
+    @field:Json(name = "token") val token: String? = null,
+    @field:Json(name = "expires_at") val expires_at: Long? = null,
+    @field:Json(name = "device_migrated") val device_migrated: Boolean? = null,
+    @field:Json(name = "remaining_days") val remaining_days: Int? = null,
+    @field:Json(name = "message") val message: String? = null,
+    @field:Json(name = "error") val error: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class CheckStatusRequest(
-    val cd_key: String,
-    val device_fingerprint: String
+    @field:Json(name = "cd_key") val cd_key: String,
+    @field:Json(name = "device_fingerprint") val device_fingerprint: String
 )
 
 @JsonClass(generateAdapter = true)
 data class CheckStatusResponse(
-    val status: String? = null,
-    val token: String? = null,
-    val expires_at: Long? = null,
-    val message: String? = null,
-    val error: String? = null
+    @field:Json(name = "status") val status: String? = null,
+    @field:Json(name = "token") val token: String? = null,
+    @field:Json(name = "expires_at") val expires_at: Long? = null,
+    @field:Json(name = "message") val message: String? = null,
+    @field:Json(name = "error") val error: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class VerifyLicenseRequest(
-    val cd_key: String,
-    val device_fingerprint: String
+    @field:Json(name = "cd_key") val cd_key: String,
+    @field:Json(name = "device_fingerprint") val device_fingerprint: String
 )
 
 @JsonClass(generateAdapter = true)
 data class VerifyLicenseResponse(
-    val valid: Boolean = false,
-    val reason: String? = null,
-    val message: String? = null,
-    val expires_at: Long? = null
+    @field:Json(name = "valid") val valid: Boolean = false,
+    @field:Json(name = "reason") val reason: String? = null,
+    @field:Json(name = "message") val message: String? = null,
+    @field:Json(name = "expires_at") val expires_at: Long? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class RestoreLicenseRequest(
-    val device_fingerprint: String,
-    val device_model: String? = null
+    @field:Json(name = "device_fingerprint") val device_fingerprint: String,
+    @field:Json(name = "device_model") val device_model: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class RestoreLicenseResponse(
-    val status: String? = null,
-    val token: String? = null,
-    val cd_key: String? = null,
-    val expires_at: Long? = null,
-    val message: String? = null,
-    val error: String? = null
+    @field:Json(name = "status") val status: String? = null,
+    @field:Json(name = "token") val token: String? = null,
+    @field:Json(name = "cd_key") val cd_key: String? = null,
+    @field:Json(name = "expires_at") val expires_at: Long? = null,
+    @field:Json(name = "message") val message: String? = null,
+    @field:Json(name = "error") val error: String? = null
 )
 
 interface LicenseApi {

@@ -413,8 +413,8 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                         value = newNumber,
                         onValueChange = { newNumber = it.filter { c -> c.isDigit() || c == ',' || c == ' ' } },
                         modifier = Modifier.weight(1.1f),
-                        label = { Text("ဂဏန်း (၃ လုံး)", fontSize = 11.sp) },
-                        placeholder = { Text("123", fontSize = 11.sp) },
+                        label = { Text("ဂဏန်း (၂ လုံး)", fontSize = 11.sp) },
+                        placeholder = { Text("12", fontSize = 11.sp) },
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)

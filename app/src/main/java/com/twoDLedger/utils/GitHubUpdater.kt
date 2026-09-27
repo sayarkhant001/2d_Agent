@@ -152,7 +152,7 @@ object GitHubUpdater {
                 connection.connectTimeout = 15_000
                 connection.readTimeout = 120_000
                 connection.instanceFollowRedirects = false   // handle manually
-                connection.setRequestProperty("User-Agent", "3DLedger-App/1.0")
+                connection.setRequestProperty("User-Agent", "2DLedger-App/1.0")
                 connection.connect()
 
                 val code = connection.responseCode

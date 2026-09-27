@@ -3,6 +3,10 @@ package com.twoDLedger.ui
 import androidx.activity.compose.BackHandler
 import com.twoDLedger.ui.theme.*
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -228,6 +232,26 @@ fun WinnerScreen(
                     border = BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "winnerPulse")
+                        val pulseScale by infiniteTransition.animateFloat(
+                            initialValue = 0.85f,
+                            targetValue = 1.30f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(900, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "winnerPulseScale"
+                        )
+                        val pulseAlpha by infiniteTransition.animateFloat(
+                            initialValue = 0.45f,
+                            targetValue = 1.0f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(900, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "winnerPulseAlpha"
+                        )
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -236,7 +260,12 @@ fun WinnerScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
-                                        .size(8.dp)
+                                        .size(9.dp)
+                                        .graphicsLayer {
+                                            scaleX = pulseScale
+                                            scaleY = pulseScale
+                                            alpha = pulseAlpha
+                                        }
                                         .clip(CircleShape)
                                         .background(EmeraldPrimary)
                                 )
@@ -569,7 +598,8 @@ fun WinnerScreen(
                                 customerName = cName,
                                 count = entry.value.size,
                                 payout = totalPayout,
-                                bets = entry.value
+                                bets = entry.value,
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -588,7 +618,8 @@ fun WinnerScreen(
                                 voucherId = vId,
                                 customerName = cName,
                                 payout = totalPayout,
-                                bets = entry.value
+                                bets = entry.value,
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -598,8 +629,8 @@ fun WinnerScreen(
                             EmptyState(msg = "တင်ကွက် ပေါက်ငွေ မရှိပါ။")
                         }
                     } else {
-                        items(overflowResults) { ov ->
-                            OverflowCard(item = ov)
+                        items(overflowResults, key = { "${it.exportRecordId}_${it.number}_${it.amount}" }) { ov ->
+                            OverflowCard(item = ov, modifier = Modifier.animateItem())
                         }
                     }
                 }
@@ -707,10 +738,11 @@ fun AgentCard(
     customerName: String,
     count: Int,
     payout: Double,
-    bets: List<WinnerResult>
+    bets: List<WinnerResult>,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = SlateSurface),
         border = BorderStroke(1.dp, CardBorder)
@@ -749,10 +781,11 @@ fun VoucherCard(
     voucherId: Int,
     customerName: String,
     payout: Double,
-    bets: List<WinnerResult>
+    bets: List<WinnerResult>,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = SlateSurface),
         border = BorderStroke(1.dp, CardBorder)
@@ -787,9 +820,9 @@ fun VoucherCard(
 }
 
 @Composable
-fun OverflowCard(item: OverflowWinResult) {
+fun OverflowCard(item: OverflowWinResult, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = SlateSurface),
         border = BorderStroke(1.dp, CardBorder)

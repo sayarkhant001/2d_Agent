@@ -52,4 +52,8 @@ object TwoDNumberGenerator {
     // ဘရိတ် (Break/Sum): 10 numbers whose digits sum % 10 == target
     fun breakNum(d: Int): List<String> = (0..99).map { it.toString().padStart(2, '0') }
         .filter { s -> (s[0].digitToInt() + s[1].digitToInt()) % 10 == d }
+
+    // ပတ် / အပါ (Roll/Include): 19 numbers containing digit d (0..9)
+    fun roll(d: Int): List<String> = (0..99).map { it.toString().padStart(2, '0') }
+        .filter { it.contains(d.toString()) }
 }

@@ -28,6 +28,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import com.twoDLedger.data.Customer
 import com.twoDLedger.ui.theme.*
 
@@ -300,6 +304,7 @@ fun CustomersScreen(
                                     netAmount    = net,
                                     commPct      = commPct,
                                     voucherCount = voucherCount,
+                                    modifier     = Modifier.animateItem(),
                                     onEditTap    = { editCustomer = customer },
                                     onBetsTap    = { viewingCustomer = customer },
                                     onAddBetTap  = { onNavigateToBetting(customer.id) }
@@ -322,18 +327,37 @@ fun CustomerCard(
     netAmount    : Int,
     commPct      : Int = 0,
     voucherCount : Int,
+    modifier     : Modifier = Modifier,
     onEditTap    : () -> Unit,
     onBetsTap    : () -> Unit,
     onAddBetTap  : () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "customerCardScale"
+    )
+
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onBetsTap),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onBetsTap),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = BorderStroke(
+            1.dp,
+            if (isPressed) EmeraldPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 1.dp else 2.dp)
     ) {
         Column(
             modifier = Modifier

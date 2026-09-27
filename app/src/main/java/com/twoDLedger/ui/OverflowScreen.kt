@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.twoDLedger.logic.NumberGenerator
 import com.twoDLedger.ui.theme.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -80,7 +79,7 @@ fun OverflowScreen(
     fun keptAmount(totalBetAmount: Int): Int =
         if (brakeLimit > 0) minOf(totalBetAmount, brakeLimit) else totalBetAmount
 
-    // Sort exposures — ascending by number string (000 → 999)
+    // Sort exposures — ascending by number string (00 → 99)
     val overflowExposures = ledgerExposures.filter { it.overflowAmount > 0 }.sortedBy { it.number.toIntOrNull() ?: 0 }
 
     // Left table: ALL numbers with any bet, sorted ascending by number (numeric, not lexicographic).
@@ -90,17 +89,11 @@ fun OverflowScreen(
         .filter { it.totalBetAmount > 0 }
         .sortedBy { it.number.toIntOrNull() ?: 0 }
 
-    // When winning number is declared: show winning exact number and tut numbers only
+    // When winning number is declared: show winning exact number
     val brakedWinRows = remember(batchWinningNumber, exposureMap, brakeLimit) {
         if (batchWinningNumber.length != 2) return@remember emptyList<BrakedWinRow>()
-        val revWinning = com.twoDLedger.logic.TwoDNumberGenerator.reverse(batchWinningNumber).filter { it != batchWinningNumber }
-
         val exactAmt = if (brakeLimit > 0) minOf(exposureMap[batchWinningNumber]?.totalBetAmount ?: 0, brakeLimit) else (exposureMap[batchWinningNumber]?.totalBetAmount ?: 0)
-        listOf(BrakedWinRow(batchWinningNumber, isExact = true, amount = exactAmt)) +
-            revWinning.map { num ->
-                val amt = if (brakeLimit > 0) minOf(exposureMap[num]?.totalBetAmount ?: 0, brakeLimit) else (exposureMap[num]?.totalBetAmount ?: 0)
-                BrakedWinRow(num, isExact = false, amount = amt)
-            }
+        listOf(BrakedWinRow(batchWinningNumber, isExact = true, amount = exactAmt))
     }
 
     val totalBraked = brakedExposures.sumOf { keptAmount(it.totalBetAmount) }
@@ -109,9 +102,6 @@ fun OverflowScreen(
 
     val exactKeptAmt = if (isWonDeclared) keptAmount(exposureMap[batchWinningNumber]?.totalBetAmount ?: 0) else 0
     val exactPayout = (exactKeptAmt * exactMult).toLong()
-
-    val tuwtKeptAmt = 0L
-    val tuwtPayout = 0L
 
     val totalPayout = exactPayout
     val brakedProfit = netAfterComm - totalPayout
@@ -490,11 +480,12 @@ fun OverflowScreen(
                     }
                     LazyColumn(modifier = Modifier.weight(1f).background(MaterialTheme.colorScheme.surface)) {
                         if (isWonDeclared) {
-                            items(brakedWinRows) { row ->
+                            items(brakedWinRows, key = { it.number }) { row ->
                                 val rowBg = if (row.isExact) WinExactRed else Color.Transparent
                                 val textColor = if (row.isExact) Color.White else MaterialTheme.colorScheme.onSurface
                                 Row(
                                     modifier = Modifier
+                                        .animateItem()
                                         .fillMaxWidth()
                                         .background(rowBg)
                                         .padding(vertical = 5.dp, horizontal = 4.dp),
@@ -529,10 +520,15 @@ fun OverflowScreen(
                                     }
                                 }
                             }
-                            items(brakedExposures) { exposure ->
+                            items(brakedExposures, key = { it.number }) { exposure ->
                                 val kept = keptAmount(exposure.totalBetAmount)
                                 val isOverflowing = brakeLimit > 0 && exposure.totalBetAmount > brakeLimit
-                                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp, horizontal = 4.dp)) {
+                                Row(
+                                    modifier = Modifier
+                                        .animateItem()
+                                        .fillMaxWidth()
+                                        .padding(vertical = 5.dp, horizontal = 4.dp)
+                                ) {
                                     Text(
                                         exposure.number,
                                         modifier = Modifier.weight(1f),
@@ -587,9 +583,10 @@ fun OverflowScreen(
                                 }
                             }
                         }
-                        items(overflowExposures) { exposure ->
+                        items(overflowExposures, key = { it.number }) { exposure ->
                             Row(
                                 modifier = Modifier
+                                    .animateItem()
                                     .fillMaxWidth()
                                     .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
                                     .padding(vertical = 5.dp, horizontal = 2.dp)

@@ -288,7 +288,7 @@ function App() {
 
       // 1. Primary Scraper Worker (Sanook Live ~3:15 PM MMT + GLO fallback)
       try {
-        const res = await fetch('https://3d-scraper-worker.khaingkhantkyaw001.workers.dev/latest-glo');
+        const res = await fetch('https://2d-scraper-worker.khaingkhantkyaw001.workers.dev/latest-glo');
         if (res.ok) {
           const json = await res.json();
           if (json.status === 'ok' && json.data) {
@@ -300,7 +300,7 @@ function App() {
       // 2. Secondary Scraper Worker
       if (!data) {
         try {
-          const res2 = await fetch('https://3d-scraper-worker.sayarkhant001.workers.dev/latest-glo');
+          const res2 = await fetch('https://2d-scraper-worker.sayarkhant001.workers.dev/latest-glo');
           if (res2.ok) {
             const json2 = await res2.json();
             if (json2.status === 'ok' && json2.data) {
@@ -391,10 +391,11 @@ function App() {
       return;
     }
 
-    const tut = calculateTutNumbers(gloResult.threeD);
+    const tut = calculateTutNumbers(gloResult.threeD || gloResult.twoD);
     const sourceLabel = gloResult.source || gloResult.session || 'Live Fast Feed (~3:15 PM MMT)';
+    const winning2D = gloResult.twoD || gloResult.threeD;
     const updates = {
-      '2d_live_results/winning_number': gloResult.threeD,
+      '2d_live_results/winning_number': winning2D,
       '2d_live_results/first_prize': gloResult.firstPrize || '',
       '2d_live_results/twod': gloResult.twoD || '',
       '2d_live_results/result_date': gloResult.date || '',
@@ -418,16 +419,16 @@ function App() {
     await dbUpdate('', updates);
 
     // Sync manual inputs for consistency
-    setManualNumber(gloResult.threeD);
+    setManualNumber(winning2D);
     setManualStatus('declared');
     if (gloResult.date) setManualDate(gloResult.date);
 
     // Also notify worker to broadcast if available
     try {
-      fetch('https://3d-scraper-worker.khaingkhantkyaw001.workers.dev/apply-glo', { method: 'POST' }).catch(() => {});
+      fetch('https://2d-scraper-worker.khaingkhantkyaw001.workers.dev/apply-glo', { method: 'POST' }).catch(() => {});
     } catch (_) {}
 
-    showToast(`⚡ 2D Result (${gloResult.threeD}) applied to Live App & Firebase!`);
+    showToast(`⚡ 2D Result (${winning2D}) applied to Live App & Firebase!`);
   };
 
   const handleKeyTypeChange = (newType) => {
@@ -520,12 +521,12 @@ function App() {
         }
       }
 
-      updates[`3d_licenses/keys/${key}`] = keyRecord;
+      updates[`2d_licenses/keys/${key}`] = keyRecord;
       newlyGenerated.push(key);
     }
 
     if (assignedReseller) {
-      updates[`3d_licenses/resellers/${assignedReseller.telegram_id}/total_generated`] = (assignedReseller.total_generated || 0) + count;
+      updates[`2d_licenses/resellers/${assignedReseller.telegram_id}/total_generated`] = (assignedReseller.total_generated || 0) + count;
     }
 
     await dbUpdate('', updates);
@@ -584,11 +585,11 @@ function App() {
       const newPaid = currentPaid + amount;
 
       const updates = {};
-      updates[`3d_licenses/resellers/${resellerId}/total_due`] = newDue;
-      updates[`3d_licenses/resellers/${resellerId}/total_paid`] = newPaid;
+      updates[`2d_licenses/resellers/${resellerId}/total_due`] = newDue;
+      updates[`2d_licenses/resellers/${resellerId}/total_paid`] = newPaid;
 
       const ledgerId = `pay_${Date.now()}`;
-      updates[`3d_licenses/reseller_ledger/${resellerId}/${ledgerId}`] = {
+      updates[`2d_licenses/reseller_ledger/${resellerId}/${ledgerId}`] = {
         id: ledgerId,
         reseller_id: resellerId,
         reseller_name: settleModalReseller.name,

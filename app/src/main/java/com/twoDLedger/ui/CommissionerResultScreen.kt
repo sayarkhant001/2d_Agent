@@ -24,6 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.core.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.twoDLedger.data.Customer
-import com.twoDLedger.logic.NumberGenerator
 import com.twoDLedger.ui.theme.*
 
 // ── Palette (Harmonized Emerald-Gold) ──────────────────────────────────────────
@@ -277,7 +280,7 @@ fun CommissionerResultScreen(
             }
 
             when {
-                winningNumber.length != 3 ->
+                winningNumber.length != 2 ->
                     Box(Modifier.weight(1f).fillMaxWidth(), Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.Info, null, tint = ResPrimary.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
@@ -302,6 +305,7 @@ fun CommissionerResultScreen(
                         items(settlements, key = { it.customer.id }) { s ->
                             AgentSettlementCard(
                                 settlement  = s,
+                                modifier    = Modifier.animateItem(),
                                 onTapDetail = {
                                     dialogAgent = s
                                     val text = buildClipText(s, batchNumber, winningNumber)
@@ -537,18 +541,35 @@ fun CommissionerResultScreen(
 @Composable
 fun AgentSettlementCard(
     settlement : AgentSettlement,
+    modifier   : Modifier = Modifier,
     onTapDetail: () -> Unit,
     onEditPaid : () -> Unit,
     onTapTut   : (() -> Unit)? = null,
     onTapExact : (() -> Unit)? = null
 ) {
     val s = settlement
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+        ),
+        label = "agentCardScale"
+    )
+
     Card(
-        modifier  = Modifier.fillMaxWidth(),
+        modifier  = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
         shape     = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isPressed) 1.dp else 3.dp),
         colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border    = androidx.compose.foundation.BorderStroke(1.dp, CardBorderSubtle)
+        border    = androidx.compose.foundation.BorderStroke(1.dp, if (isPressed) ResPrimary.copy(alpha = 0.5f) else CardBorderSubtle)
     ) {
         Column {
             // Emerald header with customer info

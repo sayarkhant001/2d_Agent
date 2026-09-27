@@ -30,7 +30,6 @@ import com.twoDLedger.ui.theme.*
 // ── 2D Number Category Helper ─────────────────────────────────────────────────
 private enum class NumCat(val label: String, val color: Color, val bgColor: Color) {
     EXACT("ဒဲ့ (ပေါက်)", WinExactRed, WinExactBg),
-    REVERSE("R (ပြန်)", WinPermGold, WinPermBg),
     NONE("", Color.Transparent, Color.Transparent)
 }
 
@@ -166,8 +165,7 @@ fun LedgerScreen(
                     }
 
                     if (isAfterMode) {
-                        val exactWonCount = relevantRows.count { it.second == NumCat.EXACT }
-                        val revWonCount   = relevantRows.count { it.second == NumCat.REVERSE }
+                        val exactWonBetsSum = relevantRows.filter { it.second == NumCat.EXACT }.sumOf { it.first.totalBetAmount }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -192,13 +190,13 @@ fun LedgerScreen(
                             }
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (exactWonCount > 0 || revWonCount > 0) EmeraldLight else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (exactWonCount > 0 || revWonCount > 0) EmeraldMedium.copy(alpha = 0.35f) else Color.Transparent)
+                                color = if (exactWonBetsSum > 0) EmeraldLight else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (exactWonBetsSum > 0) EmeraldMedium.copy(alpha = 0.35f) else Color.Transparent)
                             ) {
                                 Text(
-                                    if (exactWonCount > 0 || revWonCount > 0) "ဒဲ့ $exactWonCount | R $revWonCount"
+                                    if (exactWonBetsSum > 0) "ဒဲ့ပေါက် %,d Ks".format(exactWonBetsSum)
                                     else "ပေါက်သီး မရှိပါ",
-                                    color = if (exactWonCount > 0 || revWonCount > 0) EmeraldDark else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (exactWonBetsSum > 0) EmeraldDark else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
@@ -276,10 +274,11 @@ fun LedgerScreen(
                     }
                 } else {
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        itemsIndexed(allExposures) { idx, exposure ->
+                        itemsIndexed(allExposures, key = { _, exp -> exp.number }) { idx, exposure ->
                             val isEven = idx % 2 == 0
                             Row(
                                 modifier = Modifier
+                                    .animateItem()
                                     .fillMaxWidth()
                                     .background(if (isEven) Color.White else Color(0xFFF8FAFC))
                                     .clickable(onClick = onNavigateToResult)
@@ -354,15 +353,15 @@ fun LedgerScreen(
                     }
                 } else {
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        itemsIndexed(relevantRows) { idx, (exposure, cat) ->
+                        itemsIndexed(relevantRows, key = { _, pair -> pair.first.number }) { idx, (exposure, cat) ->
                             val isEven = idx % 2 == 0
                             val rowBg = when (cat) {
-                                NumCat.EXACT   -> Color(0xFFFFF1F2) // Dominant rose highlight for exact win
-                                NumCat.REVERSE -> if (isEven) Color.White else Color(0xFFFFFBEB) // Alternating clean white and warm cream
-                                else           -> if (isEven) Color.White else Color(0xFFF8FAFC)
+                                NumCat.EXACT -> Color(0xFFFFF1F2) // Dominant rose highlight for exact win
+                                else         -> if (isEven) Color.White else Color(0xFFF8FAFC)
                             }
                             Row(
                                 modifier = Modifier
+                                    .animateItem()
                                     .fillMaxWidth()
                                     .background(rowBg)
                                     .clickable(onClick = onNavigateToResult)
@@ -413,39 +412,6 @@ fun LedgerScreen(
                                                     color = Color(0xFFB91C1C),
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.ExtraBold,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-                                        NumCat.REVERSE -> {
-                                            // Tut numbers with distinct high-contrast white container & warm amber border
-                                            Surface(
-                                                shape = RoundedCornerShape(8.dp),
-                                                color = Color.White,
-                                                border = BorderStroke(1.2.dp, GoldAccent.copy(alpha = 0.5f)),
-                                                shadowElevation = 1.dp
-                                            ) {
-                                                Text(
-                                                    exposure.number,
-                                                    color = GoldDark,
-                                                    fontWeight = FontWeight.Black,
-                                                    fontSize = 18.sp,
-                                                    fontFamily = FontFamily.Monospace,
-                                                    letterSpacing = 1.5.sp,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                                )
-                                            }
-                                            Spacer(Modifier.width(8.dp))
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = GoldContainer,
-                                                border = BorderStroke(0.8.dp, GoldAccent.copy(alpha = 0.4f))
-                                            ) {
-                                                Text(
-                                                    cat.label,
-                                                    color = GoldDark,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                                 )
                                             }

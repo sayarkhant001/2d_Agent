@@ -104,6 +104,36 @@ object TwoDBetParser {
             return TwoDNumberGenerator.oddOdd().map { it to amt }
         }
 
+        // စုံမ (Even-Odd: e.g. "စုံမ 500")
+        val evenOddMatch = Regex("""^စုံမ\s*[=:\- ]?\s*(\d+)\s*(?:ks|ကျပ်)?$""").find(clean)
+        if (evenOddMatch != null) {
+            val amt = evenOddMatch.groupValues[1].toInt()
+            return TwoDNumberGenerator.evenOdd().map { it to amt }
+        }
+
+        // မစုံ (Odd-Even: e.g. "မစုံ 500")
+        val oddEvenMatch = Regex("""^မစုံ\s*[=:\- ]?\s*(\d+)\s*(?:ks|ကျပ်)?$""").find(clean)
+        if (oddEvenMatch != null) {
+            val amt = oddEvenMatch.groupValues[1].toInt()
+            return TwoDNumberGenerator.oddEven().map { it to amt }
+        }
+
+        // ပတ် / အပါ (Roll/Include: e.g. "2ပတ် 500", "2ပတ်=500", "2အပါ 500", "2ပါ=500")
+        val rollMatch = Regex("""^(\d)\s*(?:ပတ်|အပါ|ပါ)\s*[=:\- ]?\s*(\d+)\s*(?:ks|ကျပ်)?$""").find(clean)
+        if (rollMatch != null) {
+            val d = rollMatch.groupValues[1].toInt()
+            val amt = rollMatch.groupValues[2].toInt()
+            return TwoDNumberGenerator.roll(d).map { it to amt }
+        }
+
+        // ဘရိတ် (Break: e.g. "5ဘရိတ် 500", "5ဘရိတ်=500")
+        val breakMatch = Regex("""^(\d)\s*ဘရိတ်\s*[=:\- ]?\s*(\d+)\s*(?:ks|ကျပ်)?$""").find(clean)
+        if (breakMatch != null) {
+            val d = breakMatch.groupValues[1].toInt()
+            val amt = breakMatch.groupValues[2].toInt()
+            return TwoDNumberGenerator.breakNum(d).map { it to amt }
+        }
+
         // 2. Standard 2-digit patterns: e.g. "12-34-56 = 1000", "12=500", "12R=500", "12/500", "12 r 500"
         val tailAmtMatch = Regex("""[=:\s/,\-_]+(\d+)\s*(?:ks|ကျပ်)?$""").find(clean) ?: return emptyList()
         val amount = tailAmtMatch.groupValues[1].toIntOrNull() ?: return emptyList()

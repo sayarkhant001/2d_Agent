@@ -29,6 +29,7 @@ export interface InlineKeyboardButton {
   text: string;
   callback_data?: string;
   url?: string;
+  copy_text?: { text: string };
 }
 
 export interface InlineKeyboardMarkup {
@@ -431,7 +432,7 @@ export async function sendTelegramDocumentBlob(
   replyMarkup?: TelegramReplyMarkup,
   parseMode: 'HTML' | 'MarkdownV2' | 'Markdown' = 'HTML',
   fileName = '2D_Ledger.apk'
-) {
+): Promise<any> {
   const token = getCleanBotToken(env);
   if (!token) return null;
 
@@ -461,7 +462,7 @@ export async function sendTelegramDocument(
   replyMarkup?: TelegramReplyMarkup,
   parseMode: 'HTML' | 'MarkdownV2' | 'Markdown' = 'HTML',
   fileName = '2D_Ledger.apk'
-) {
+): Promise<any> {
   const token = getCleanBotToken(env);
   if (!token) return null;
 
@@ -2991,7 +2992,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
     // Public App Download callback
     else if (data === 'b_app_download') {
       await answerCallbackQuery(env, cq.id);
-      await sendAppToUser(env, chatId, senderId, cq.from?.username, cq.from?.first_name);
+      await sendAppToUser(env, chatId, cq.from?.id ? String(cq.from.id) : String(chatId), cq.from?.username, cq.from?.first_name);
       return new Response(JSON.stringify({ status: 'ok' }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -3986,16 +3987,13 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
     // Fetch Thai GLO Result & Declare Winner: w_fetch_glo
     else if (data === 'w_fetch_glo') {
       const glo = await fetchFromGloLottery();
-      if (glo && glo.threeD) {
-        await setWinningNumber(env, glo.threeD, String(chatId));
-        await answerCallbackQuery(env, cq.id, `✅ Thai GLO ${glo.threeD} အား သတ်မှတ်ပြီးပါပြီ!`, true);
-        const tut = calculateTutNumbers(glo.threeD);
+      if (glo && glo.twoD) {
+        await setWinningNumber(env, glo.twoD, String(chatId));
+        await answerCallbackQuery(env, cq.id, `✅ Thai GLO ${glo.twoD} အား သတ်မှတ်ပြီးပါပြီ!`, true);
         const text = `🎯 <b>Thai GLO ပေါက်ဂဏန်း အောင်မြင်စွာ ကြေညာပြီးပါပြီ</b>\n\n` +
-          `✨ <b>2D ပေါက်သီး (ဒဲ့):</b> <code>${glo.threeD}</code>\n` +
+          `✨ <b>2D ပေါက်သီး (ဒဲ့):</b> <code>${glo.twoD}</code>\n` +
           `🥇 <b>ပထမဆု:</b> <code>${glo.firstPrize}</code>\n` +
           `📅 <b>ရက်စွဲ:</b> ${glo.date}\n\n` +
-          `🔢 <b>တွတ် ဂဏန်းများ (${tut.allTut.length} ကွက်):</b>\n` +
-          `<code>${tut.allTut.join(', ')}</code>\n\n` +
           `<i>Android အက်ပ်များနှင့် ဆာဗာအားလုံးတွင် ချက်ချင်း ရောင်ပြန်ဟပ်ပါမည်။</i>`;
         const kb: InlineKeyboardMarkup = {
           inline_keyboard: [[{ text: '⬅️ ပင်မ မီနူး', callback_data: 'm_main' }]]
@@ -4241,7 +4239,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
     const senderId = msg.from?.id ? String(msg.from.id) : String(chatId);
     const userIsAdmin = await isUserAdmin(senderId, env);
 
-    if (userIsAdmin) {
+    if (userIsAdmin && msg.document) {
       const doc = msg.document;
       const fileName = doc.file_name || '2D_Ledger.apk';
       const isApk = fileName.toLowerCase().endsWith('.apk') || doc.mime_type === 'application/vnd.android.package-archive';
@@ -4293,6 +4291,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
   // 2. Handle Photo Messages (Direct Buyer Payment Screenshot Upload)
   if (update.message && update.message.photo && update.message.photo.length > 0) {
     const msg = update.message;
+    if (!msg.photo || msg.photo.length === 0) return new Response('ok');
     const chatId = msg.chat.id;
     const senderId = msg.from?.id ? String(msg.from.id) : String(chatId);
     const senderName = msg.from?.first_name || 'Buyer';
@@ -4343,6 +4342,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
   // 3. Handle Text Messages & Commands
   if (update.message && update.message.text) {
     const msg = update.message;
+    if (!msg.text) return new Response('ok');
     const text = msg.text.trim();
     const chatId = msg.chat.id;
     const senderId = msg.from?.id ? String(msg.from.id) : String(chatId);
@@ -4596,8 +4596,7 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
         const liveKb: InlineKeyboardMarkup = {
           inline_keyboard: [
             [
-              { text: '🔄 အသစ်ပြန်စစ်မည်', callback_data: 'b_live_refresh' },
-              { text: '🔢 တွတ် ဂဏန်းများ', callback_data: `tut:${glo.threeD}` }
+              { text: '🔄 အသစ်ပြန်စစ်မည်', callback_data: 'b_live_refresh' }
             ],
             [
               { text: '📲 အက်ပ် ဒေါင်းလုဒ်ရယူရန်', callback_data: 'b_app_download' },
@@ -4607,9 +4606,8 @@ export async function handleTelegramWebhook(request: Request, env: Env): Promise
         };
         await sendTelegramMessage(env, chatId,
           `🇹🇭 <b>ထိုင်း GLO တရားဝင် 2D ရလဒ်</b>\n\n` +
-          `🎯 <b>2D ပေါက်ဂဏန်း:</b> <code>${glo.threeD}</code>\n` +
+          `🎯 <b>2D ပေါက်ဂဏန်း:</b> <code>${glo.twoD}</code>\n` +
           `🥇 <b>ပထမဆု (1st Prize):</b> <code>${glo.firstPrize}</code>\n` +
-          `🔢 <b>2D:</b> <code>${glo.twoD}</code>\n` +
           `📅 <b>ထွက်သည့်ရက်:</b> ${glo.date}\n` +
           `⚡ <b>ရင်းမြစ်:</b> ${glo.source || glo.session}`,
           userRoleKb

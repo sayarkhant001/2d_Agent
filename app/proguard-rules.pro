@@ -1,9 +1,9 @@
 # -----------------------------------------------------------------------------
-# 3D LEDGER ANTI-REVERSE ENGINEERING & R8 COMPILATION HARDENING RULES
+# 2D LEDGER ANTI-REVERSE ENGINEERING & R8 COMPILATION HARDENING RULES
 # -----------------------------------------------------------------------------
 
 # 1. Obfuscation & Package Flattening
--repackageclasses 'com.threeDLedger.obf'
+-repackageclasses 'com.twoDLedger.obf'
 -allowaccessmodification
 -overloadaggressively
 -renamesourcefileattribute ""
@@ -22,24 +22,30 @@
 }
 
 # 4. Entry Points (Activities, Services, Application)
--keep public class com.threeDLedger.MainActivity { *; }
--keep public class com.threeDLedger.logic.LotteryMessagingService { *; }
+-keep public class com.twoDLedger.MainActivity { *; }
+-keep public class com.twoDLedger.logic.LotteryMessagingService { *; }
 
 # 5. Serialization & Network Models (Preserve JSON field names for Moshi/Retrofit)
--keepclassmembers class com.threeDLedger.network.** {
+-keepclassmembers class com.twoDLedger.network.** {
     <fields>;
 }
--keep class com.threeDLedger.network.** { *; }
--dontwarn com.threeDLedger.network.**
+-keep class com.twoDLedger.network.** { *; }
+-dontwarn com.twoDLedger.network.**
 
 # 6. Room Database & Local Entities
 -keep class androidx.room.** { *; }
 -dontwarn androidx.room.**
 -keep class * extends androidx.room.RoomDatabase { *; }
--keep class com.threeDLedger.data.** { *; }
--keepclassmembers class com.threeDLedger.data.** {
+-keep class com.twoDLedger.data.** { *; }
+-keepclassmembers class com.twoDLedger.data.** {
     <fields>;
 }
+
+# Keep Data Models across logic & ui for serialization & state
+-keepclassmembers class com.twoDLedger.logic.** {
+    <fields>;
+}
+-keep class com.twoDLedger.logic.** { *; }
 
 # 7. Jetpack Compose
 -keep class androidx.compose.** { *; }
@@ -77,7 +83,6 @@
     public static void println(...);
     public static void print(...);
 }
--flattenpackagehierarchy 'com.threeDLedger.obf'
 -optimizationpasses 5
 
 # -----------------------------------------------------------------------------
