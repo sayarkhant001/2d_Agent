@@ -88,6 +88,7 @@ fun BettingScreen(
     var tempNumber by remember { mutableStateOf("") }
     var tempAmount by remember { mutableStateOf("1000") }
     var tempRemark by remember { mutableStateOf("") }
+    var isFreshAmountInput by remember { mutableStateOf(true) }
 
     val pendingBets = remember { mutableStateListOf<Bet>() }
     val rDimens = rememberResponsiveDimens()
@@ -143,7 +144,7 @@ fun BettingScreen(
     }
 
     fun addBets(numbers: List<String>) {
-        val amount = tempAmount.toIntOrNull() ?: 0
+        val amount = tempAmount.toIntOrNull() ?: 1000
         if (amount <= 0 || numbers.isEmpty()) return
 
         val candidateBets = numbers.map { num -> Bet(voucherId = 0, number = num, amount = amount) }
@@ -159,70 +160,101 @@ fun BettingScreen(
         }
 
         tempNumber = ""
+        currentBetType = "ဒဲ့"
         focusedField = FocusField.NUMBER
+        isFreshAmountInput = true
     }
 
     fun appendText(txt: String) {
         if (focusedField == FocusField.NUMBER) {
             if (tempNumber.length < 2) {
                 tempNumber += txt
+                isFreshAmountInput = true
+            } else {
+                // Number reached 2 digits (e.g. 34) -> auto overflow excess digits to amount field!
+                focusedField = FocusField.AMOUNT
+                tempAmount = txt
+                isFreshAmountInput = false
             }
         } else {
-            if (tempAmount == "0" || tempAmount.isEmpty()) {
+            // Currently focused on AMOUNT
+            if (isFreshAmountInput || tempAmount == "0" || tempAmount.isEmpty()) {
                 tempAmount = txt
+                isFreshAmountInput = false
             } else {
-                tempAmount += txt
+                if (tempAmount.length < 9) {
+                    tempAmount += txt
+                }
             }
         }
     }
 
     fun backspace() {
-        if (focusedField == FocusField.NUMBER && tempNumber.isNotEmpty()) {
-            tempNumber = tempNumber.dropLast(1)
-        } else if (focusedField == FocusField.AMOUNT && tempAmount.isNotEmpty()) {
-            tempAmount = tempAmount.dropLast(1)
+        if (focusedField == FocusField.AMOUNT) {
+            if (tempAmount.isNotEmpty()) {
+                tempAmount = tempAmount.dropLast(1)
+            } else {
+                focusedField = FocusField.NUMBER
+            }
+        } else if (focusedField == FocusField.NUMBER) {
+            if (tempNumber.isNotEmpty()) {
+                tempNumber = tempNumber.dropLast(1)
+            }
         }
     }
 
     fun clearAll() {
         tempNumber = ""
         tempAmount = "1000"
+        currentBetType = "ဒဲ့"
         focusedField = FocusField.NUMBER
+        isFreshAmountInput = true
     }
 
     fun submit() {
         val digits = tempNumber.trim()
         val num = digits.toIntOrNull()
-        if (digits.isEmpty()) return
+        val amt = tempAmount.toIntOrNull() ?: 1000
+        if (amt <= 0) return
+
+        var betsToAdd: List<String> = emptyList()
 
         when (currentBetType) {
             "ဒဲ့" -> {
-                if (digits.length == 2) {
-                    addBets(listOf(digits))
-                } else if (digits.length == 1) {
-                    addBets(listOf("0$digits"))
-                }
+                if (digits.length == 2) betsToAdd = listOf(digits)
+                else if (digits.length == 1) betsToAdd = listOf("0$digits")
             }
             "R" -> {
-                if (digits.length == 2) {
-                    addBets(TwoDNumberGenerator.reverse(digits))
-                }
+                if (digits.length == 2) betsToAdd = TwoDNumberGenerator.reverse(digits)
+                else if (digits.length == 1) betsToAdd = listOf("0$digits", "${digits}0")
             }
             "ထိပ်" -> {
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.head(num))
+                if (num != null && digits.length == 1) betsToAdd = TwoDNumberGenerator.head(num)
             }
             "ပိတ်", "နောက်" -> {
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.tail(num))
+                if (num != null && digits.length == 1) betsToAdd = TwoDNumberGenerator.tail(num)
             }
             "ပတ်" -> {
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.roll(num))
+                if (num != null && digits.length == 1) betsToAdd = TwoDNumberGenerator.roll(num)
             }
             "ဘရိတ်" -> {
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.breakNum(num))
+                if (num != null && digits.length == 1) betsToAdd = TwoDNumberGenerator.breakNum(num)
             }
+            "အပူး" -> betsToAdd = TwoDNumberGenerator.doubleNumbers()
+            "ပါဝါ" -> betsToAdd = TwoDNumberGenerator.power()
+            "နက္ခတ်" -> betsToAdd = TwoDNumberGenerator.natkhat()
+            "ညီကို" -> betsToAdd = TwoDNumberGenerator.brothers()
+            "စုံစုံ" -> betsToAdd = TwoDNumberGenerator.evenEven()
+            "မမ" -> betsToAdd = TwoDNumberGenerator.oddOdd()
+            "စုံမ" -> betsToAdd = TwoDNumberGenerator.evenOdd()
+            "မစုံ" -> betsToAdd = TwoDNumberGenerator.oddEven()
             else -> {
-                if (digits.length == 2) addBets(listOf(digits))
+                if (digits.length == 2) betsToAdd = listOf(digits)
             }
+        }
+
+        if (betsToAdd.isNotEmpty()) {
+            addBets(betsToAdd)
         }
     }
 
@@ -231,42 +263,76 @@ fun BettingScreen(
         val num = digits.toIntOrNull()
         when (cmd) {
             "R" -> {
-                if (digits.length == 2) {
-                    addBets(TwoDNumberGenerator.reverse(digits))
-                } else {
-                    currentBetType = "R"
-                }
+                currentBetType = "R"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
             }
-            "အပူး" -> addBets(TwoDNumberGenerator.doubleNumbers())
-            "ပါဝါ" -> addBets(TwoDNumberGenerator.power())
-            "နက္ခတ်" -> addBets(TwoDNumberGenerator.natkhat())
-            "ညီကို" -> addBets(TwoDNumberGenerator.brothers())
-            "စုံစုံ" -> addBets(TwoDNumberGenerator.evenEven())
-            "မမ" -> addBets(TwoDNumberGenerator.oddOdd())
-            "စုံမ" -> addBets(TwoDNumberGenerator.evenOdd())
-            "မစုံ" -> addBets(TwoDNumberGenerator.oddEven())
+            "အပူး" -> {
+                currentBetType = "အပူး"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "ပါဝါ" -> {
+                currentBetType = "ပါဝါ"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "နက္ခတ်" -> {
+                currentBetType = "နက္ခတ်"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "ညီကို" -> {
+                currentBetType = "ညီကို"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "စုံစုံ" -> {
+                currentBetType = "စုံစုံ"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "မမ" -> {
+                currentBetType = "မမ"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "စုံမ" -> {
+                currentBetType = "စုံမ"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
+            "မစုံ" -> {
+                currentBetType = "မစုံ"
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
+            }
             "ပတ်" -> {
                 currentBetType = "ပတ်"
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.roll(num))
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
             }
             "ထိပ်" -> {
                 currentBetType = "ထိပ်"
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.head(num))
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
             }
             "ပိတ်", "နောက်" -> {
                 currentBetType = "ပိတ်"
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.tail(num))
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
             }
             "ဘရိတ်" -> {
                 currentBetType = "ဘရိတ်"
-                if (num != null && digits.length == 1) addBets(TwoDNumberGenerator.breakNum(num))
+                focusedField = FocusField.AMOUNT
+                isFreshAmountInput = true
             }
             "ဖျက်" -> backspace()
             "ရှင်းပါ" -> {
                 if (pendingBets.isNotEmpty()) {
                     showClearConfirmDialog = true
                 } else {
-                    val hadInput = tempNumber.isNotEmpty() || tempAmount != "1000"
+                    val hadInput = tempNumber.isNotEmpty() || tempAmount != "1000" || currentBetType != "ဒဲ့"
                     clearAll()
                     if (!hadInput) {
                         android.widget.Toast.makeText(context, "ရှင်းရန် စာရင်း မရှိပါ", android.widget.Toast.LENGTH_SHORT).show()
@@ -894,6 +960,7 @@ fun BettingScreen(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     focusedField = FocusField.AMOUNT
+                                    isFreshAmountInput = true
                                 },
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isAmtFocused) CobaltLight.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
@@ -988,6 +1055,7 @@ fun BettingScreen(
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         tempAmount = amt
                                         focusedField = FocusField.AMOUNT
+                                        isFreshAmountInput = true
                                     },
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (isSel) CobaltPrimary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
