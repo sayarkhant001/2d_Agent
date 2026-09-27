@@ -13,9 +13,10 @@ import androidx.room.RoomDatabase
         ExportRecord::class,
         BannedNumber::class,
         ExportedNumber::class,
-        WinningHistory::class
+        WinningHistory::class,
+        Dine::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

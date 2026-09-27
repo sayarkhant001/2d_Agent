@@ -3,11 +3,15 @@ package com.twoDLedger.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,12 +41,15 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+private val VoucherHeaderBlue = Color(0xFF1B2A6B)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VouchersScreen(
     viewModel: MainViewModel,
     initialCustomerId: Int? = null,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToWinner: () -> Unit = {}
 ) {
     BackHandler(onBack = onNavigateBack)
 
@@ -53,12 +60,15 @@ fun VouchersScreen(
 
     val vouchers by viewModel.vouchersWithCustomer.collectAsStateWithLifecycle()
     val allVouchersWithBets by viewModel.vouchersWithBets.collectAsStateWithLifecycle()
+    val exportRecords by viewModel.allExportRecords.collectAsStateWithLifecycle()
+    val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
     val footerText by viewModel.voucherFooterText.collectAsStateWithLifecycle()
     val winningNumber by viewModel.winningNumber.collectAsStateWithLifecycle()
 
     var selectedSessionFilter by remember { mutableStateOf("ALL") } // "ALL", "12:00 PM", "4:30 PM"
     var searchQuery by remember { mutableStateOf("") }
     var voucherToDelete by remember { mutableStateOf<VoucherWithBets?>(null) }
+    var expandedVoucherIds by remember { mutableStateOf(setOf<Int>()) }
 
     // Filter normal vouchers (exclude overflow/upper internal records)
     val baseVouchers = remember(allVouchersWithBets, initialCustomerId) {
@@ -97,31 +107,144 @@ fun VouchersScreen(
     val totalSalesAmount = displayedVouchers.sumOf { vwb -> vwb.bets.sumOf { it.amount.toLong() } }
     val totalBetsCount = displayedVouchers.sumOf { it.bets.size }
 
+    // Total exported to upper agent/Dine for current batch
+    val totalExportedForBatch = remember(exportRecords, currentBatch) {
+        exportRecords
+            .filter { it.record.batchNumber == currentBatch }
+            .sumOf { recordWithNums ->
+                recordWithNums.numbers.sumOf { it.amount.toLong() }
+            }
+    }
+
+    // Total winning payout across vouchers
+    val totalWinningPayout = remember(displayedVouchers, winningNumber) {
+        if (winningNumber.length == 2) {
+            displayedVouchers.sumOf { vwb ->
+                vwb.bets.filter { it.number == winningNumber }.sumOf { it.amount.toLong() * 80L }
+            }
+        } else 0L
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "2D ဘောင်ချာများ စာရင်း",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "ရောင်းရငွေနှင့် ထိုးကြေး ပြေစာများ ပြန်လည်စစ်ဆေးရန်",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                navigationIcon = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(VoucherHeaderBlue)
+            ) {
+                // Top App Bar Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "နောက်သို့",
+                            tint = Color.White
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "ဘောင်ချာ : $totalVoucherCount စောင်",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                // Sub-Bar: [ဒိုင်တင်: X,XXX ကျပ်] [28-SEP-2026 1] [ထွက်ဂဏန်း Button]
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp, top = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ဒိုင်တင် : %,d ကျပ်".format(totalExportedForBatch),
+                        color = Color.White,
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    val todayStr = remember {
+                        SimpleDateFormat("dd-MMM-yyyy", Locale.US).format(Date()).uppercase()
+                    }
+                    Text(
+                        text = "$todayStr $currentBatch",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Surface(
+                        onClick = onNavigateToWinner,
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.White,
+                        shadowElevation = 2.dp
+                    ) {
+                        Text(
+                            text = "ထွက်ဂဏန်း",
+                            color = VoucherHeaderBlue,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 12.5.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            Surface(
+                color = VoucherHeaderBlue,
+                shadowElevation = 10.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Text(
+                            text = "ကော်စုစုပေါင်းထိုးကြေး",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "%,d ကျပ်".format(totalSalesAmount),
+                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "ကော်အားလုံးပေါက်သီး",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = if (totalWinningPayout > 0) "%,d ကျပ်".format(totalWinningPayout) else "0",
+                            color = if (totalWinningPayout > 0) Color(0xFFFFD93D) else Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
@@ -147,7 +270,7 @@ fun VouchersScreen(
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Close, contentDescription = "ရှင်းလင်းမည်", modifier = Modifier.size(18.dp))
                                 }
                             }
                         },
@@ -218,7 +341,7 @@ fun VouchersScreen(
                             Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("ရောင်းရငွေ စုစုပေါင်း", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("${String.format("%,d", totalSalesAmount)} Ks", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF059669))
+                                Text("${String.format("%,d", totalSalesAmount)} ကျပ်", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF059669))
                             }
                             Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant))
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -259,9 +382,9 @@ fun VouchersScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = dimens.responsiveDp(10.dp, 14.dp, 18.dp), vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    items(displayedVouchers, key = { it.voucher.id }) { voucherWithBets ->
+                    itemsIndexed(displayedVouchers, key = { _, vwb -> vwb.voucher.id }) { idx, voucherWithBets ->
                         val customerName = vouchers.find { it.voucher.id == voucherWithBets.voucher.id }?.customer?.name ?: "မိမိ"
                         val voucherTotal = voucherWithBets.bets.sumOf { it.amount }
                         val isWon = winningNumber.length == 2 && voucherWithBets.bets.any { it.number == winningNumber }
@@ -269,262 +392,356 @@ fun VouchersScreen(
                             voucherWithBets.bets.filter { it.number == winningNumber }.sumOf { it.amount } * 80L
                         } else 0L
 
-                        Card(
-                            modifier = Modifier
-                                .animateItem()
-                                .fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(
-                                if (isWon) 1.5.dp else 1.dp,
-                                if (isWon) Color(0xFFF59E0B) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                // Voucher Header
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val voucherDateStr = SimpleDateFormat("dd-MMM-yyyy", Locale.US).format(Date(voucherWithBets.voucher.timestamp)).uppercase()
+                        val isExpanded = expandedVoucherIds.contains(voucherWithBets.voucher.id)
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            // Date header above each card (matching reference screenshot)
+                            Text(
+                                text = "နေ့စွဲ : $voucherDateStr",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.5.sp,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                            )
+
+                            Card(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(
+                                    if (isWon) 1.5.dp else 1.dp,
+                                    if (isWon) Color(0xFFF59E0B) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    // ── Main Card Row (Inspiring screenshot layout + tap to expand) ──
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                expandedVoucherIds = if (isExpanded) {
+                                                    expandedVoucherIds - voucherWithBets.voucher.id
+                                                } else {
+                                                    expandedVoucherIds + voucherWithBets.voucher.id
+                                                }
+                                            },
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Left content
+                                        Row(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            // Circular ledger notebook icon in blue circle
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(46.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFFDBEAFE)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    Icons.AutoMirrored.Filled.ReceiptLong,
+                                                    contentDescription = null,
+                                                    tint = VoucherHeaderBlue,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "အမည်: $customerName",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.5.sp,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Spacer(Modifier.height(2.dp))
+                                                Text(
+                                                    text = "စုစုပေါင်းရောင်းကြေး : %,d ကျပ်".format(voucherTotal),
+                                                    fontSize = 12.5.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                if (isWon) {
+                                                    Spacer(Modifier.height(2.dp))
+                                                    Text(
+                                                        text = "🎉 ပေါက်သီး: %,d ကျပ်".format(wonAmount),
+                                                        fontSize = 11.5.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFFD97706)
+                                                    )
+                                                }
+                                            }
+
+                                            // Delete red trash icon
+                                            IconButton(
+                                                onClick = { voucherToDelete = voucherWithBets },
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "ဖျက်မည်",
+                                                    tint = Color(0xFFDC2626),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Right side vertical ribbon badge with sequence number
                                         Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            modifier = Modifier.size(32.dp)
+                                            color = VoucherHeaderBlue,
+                                            shape = RoundedCornerShape(topEnd = 14.dp, bottomEnd = 14.dp),
+                                            modifier = Modifier
+                                                .width(42.dp)
+                                                .height(68.dp)
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
-                                                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                                Text(
+                                                    text = "${idx + 1}",
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Black,
+                                                    fontSize = 16.sp
+                                                )
                                             }
                                         }
-                                        Column {
-                                            Text(
-                                                text = customerName,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                fontSize = 14.sp,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            val dateStr = SimpleDateFormat("yyyy-MM-dd • HH:mm", Locale.getDefault()).format(Date(voucherWithBets.voucher.timestamp))
-                                            Text(
-                                                text = dateStr,
-                                                fontSize = 10.5.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
                                     }
 
-                                    // Voucher ID and Session Badge
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = if (voucherWithBets.voucher.session == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE)
-                                        ) {
-                                            Text(
-                                                text = voucherWithBets.voucher.session,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 10.5.sp,
-                                                color = if (voucherWithBets.voucher.session == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF),
-                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                        ) {
-                                            Text(
-                                                text = "#${voucherWithBets.voucher.id}",
-                                                fontWeight = FontWeight.Black,
-                                                fontSize = 11.sp,
-                                                fontFamily = FontFamily.Monospace,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Winner highlight banner
-                                if (isWon) {
-                                    Spacer(Modifier.height(8.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFFEF3C7),
-                                        border = BorderStroke(1.dp, Color(0xFFFDE68A)),
-                                        modifier = Modifier.fillMaxWidth()
+                                    // ── Expandable Detail Section: Full Bets Table, Copy/Print Buttons ──
+                                    AnimatedVisibility(
+                                        visible = isExpanded,
+                                        enter = expandVertically(),
+                                        exit = shrinkVertically()
                                     ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 10.dp)
                                         ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color(0xFFB45309), modifier = Modifier.size(16.dp))
-                                                Text("🎉 ပေါက်ဂဏန်း ($winningNumber) ပါဝင်ပါသည်", fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFF92400E))
-                                            }
-                                            Text("လျော်: ${String.format("%,d", wonAmount)} Ks", fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color(0xFFB45309))
-                                        }
-                                    }
-                                }
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.8.dp)
+                                            Spacer(Modifier.height(10.dp))
 
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                // Bets Table
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.5f))
-                                ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        // Header
-                                        Surface(color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
+                                            // Voucher ID & Session info
                                             Row(
-                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Text("စဉ်   ၂ လုံးဂဏန်း", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF065F46))
-                                                Text("ထိုးကြေး (Ks)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF065F46))
-                                            }
-                                        }
-
-                                        HorizontalDivider(color = Color(0xFF6EE7B7), thickness = 0.8.dp)
-
-                                        // Bet lines
-                                        voucherWithBets.bets.forEachIndexed { idx, bet ->
-                                            val isBetWinner = winningNumber.length == 2 && bet.number == winningNumber
-                                            val bg = if (isBetWinner) Color(0xFFFEF3C7) else if (idx % 2 == 0) Color.White else Color(0xFFF0FDF4)
-
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .background(bg)
-                                                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                                                modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Text(
-                                                        text = "${idx + 1}.",
-                                                        fontSize = 11.5.sp,
-                                                        color = Color(0xFF64748B),
-                                                        fontFamily = FontFamily.Monospace,
-                                                        modifier = Modifier.width(26.dp)
-                                                    )
-                                                    Text(
-                                                        text = bet.number,
-                                                        fontSize = 15.sp,
-                                                        fontWeight = FontWeight.ExtraBold,
-                                                        fontFamily = FontFamily.Monospace,
-                                                        color = if (isBetWinner) Color(0xFFB45309) else Color(0xFF0F172A)
-                                                    )
-                                                    if (isBetWinner) {
-                                                        Spacer(Modifier.width(6.dp))
-                                                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFFDE68A)) {
-                                                            Text("ပေါက်", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                                                val dateFormatted = SimpleDateFormat("yyyy-MM-dd • HH:mm", Locale.getDefault()).format(Date(voucherWithBets.voucher.timestamp))
+                                                Text(
+                                                    text = dateFormatted,
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+
+                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = if (voucherWithBets.voucher.session == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE)
+                                                    ) {
+                                                        Text(
+                                                            text = voucherWithBets.voucher.session,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 10.sp,
+                                                            color = if (voucherWithBets.voucher.session == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF),
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+                                                    Surface(
+                                                        shape = RoundedCornerShape(6.dp),
+                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                    ) {
+                                                        Text(
+                                                            text = "#${voucherWithBets.voucher.id}",
+                                                            fontWeight = FontWeight.Black,
+                                                            fontSize = 10.5.sp,
+                                                            fontFamily = FontFamily.Monospace,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            // Winner highlight banner
+                                            if (isWon) {
+                                                Spacer(Modifier.height(8.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = Color(0xFFFEF3C7),
+                                                    border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.SpaceBetween
+                                                    ) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color(0xFFB45309), modifier = Modifier.size(16.dp))
+                                                            Text("🎉 ပေါက်ဂဏန်း ($winningNumber) ပါဝင်ပါသည်", fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFF92400E))
+                                                        }
+                                                        Text("လျော်: ${String.format("%,d", wonAmount)} ကျပ်", fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color(0xFFB45309))
+                                                    }
+                                                }
+                                            }
+
+                                            Spacer(Modifier.height(8.dp))
+
+                                            // Itemized Bets Table
+                                            Surface(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(10.dp),
+                                                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.5f))
+                                            ) {
+                                                Column(modifier = Modifier.fillMaxWidth()) {
+                                                    // Table Header
+                                                    Surface(color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth()) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 5.dp),
+                                                            horizontalArrangement = Arrangement.SpaceBetween
+                                                        ) {
+                                                            Text("စဉ်   ၂ လုံးဂဏန်း", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF065F46))
+                                                            Text("ထိုးကြေး (ကျပ်)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF065F46))
+                                                        }
+                                                    }
+
+                                                    HorizontalDivider(color = Color(0xFF6EE7B7), thickness = 0.8.dp)
+
+                                                    // Bet lines
+                                                    voucherWithBets.bets.forEachIndexed { bIdx, bet ->
+                                                        val isBetWinner = winningNumber.length == 2 && bet.number == winningNumber
+                                                        val bg = if (isBetWinner) Color(0xFFFEF3C7) else if (bIdx % 2 == 0) Color.White else Color(0xFFF0FDF4)
+
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .background(bg)
+                                                                .padding(horizontal = 12.dp, vertical = 5.dp),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                                Text(
+                                                                    text = "${bIdx + 1}.",
+                                                                    fontSize = 11.5.sp,
+                                                                    color = Color(0xFF64748B),
+                                                                    fontFamily = FontFamily.Monospace,
+                                                                    modifier = Modifier.width(26.dp)
+                                                                )
+                                                                Text(
+                                                                    text = bet.number,
+                                                                    fontSize = 15.sp,
+                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                    fontFamily = FontFamily.Monospace,
+                                                                    color = if (isBetWinner) Color(0xFFB45309) else Color(0xFF0F172A)
+                                                                )
+                                                                if (isBetWinner) {
+                                                                    Spacer(Modifier.width(6.dp))
+                                                                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFFDE68A)) {
+                                                                        Text("ပေါက်", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                                                                    }
+                                                                }
+                                                            }
+                                                            Text(
+                                                                text = "${String.format("%,d", bet.amount)} ကျပ်",
+                                                                fontSize = 13.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = if (isBetWinner) Color(0xFFB45309) else Color(0xFF059669)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    HorizontalDivider(color = Color(0xFF6EE7B7), thickness = 0.8.dp)
+
+                                                    // Total Footer
+                                                    Surface(color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text("စုစုပေါင်း (${voucherWithBets.bets.size} ကွက်):", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                                                            Text(
+                                                                text = "${String.format("%,d", voucherTotal)} ကျပ်",
+                                                                fontWeight = FontWeight.ExtraBold,
+                                                                fontSize = 14.sp,
+                                                                color = Color(0xFF059669)
+                                                            )
                                                         }
                                                     }
                                                 }
+                                            }
+
+                                            if (footerText.isNotBlank()) {
+                                                Spacer(modifier = Modifier.height(6.dp))
                                                 Text(
-                                                    text = "${String.format("%,d", bet.amount)} Ks",
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = if (isBetWinner) Color(0xFFB45309) else Color(0xFF059669)
+                                                    text = footerText,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.fillMaxWidth()
                                                 )
                                             }
-                                        }
 
-                                        HorizontalDivider(color = Color(0xFF6EE7B7), thickness = 0.8.dp)
+                                            Spacer(modifier = Modifier.height(8.dp))
 
-                                        // Total Footer
-                                        Surface(color = Color(0xFFF8FAFC), modifier = Modifier.fillMaxWidth()) {
+                                            // Action Buttons Row: Copy, Print, Share
                                             Row(
-                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.End,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Text("စုစုပေါင်း (${voucherWithBets.bets.size} ကွက်):", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                                                Text(
-                                                    text = "${String.format("%,d", voucherTotal)} Ks",
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    fontSize = 14.sp,
-                                                    color = Color(0xFF059669)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        val text = buildVoucherText(voucherWithBets, customerName, footerText)
+                                                        clipboardManager.setText(AnnotatedString(text))
+                                                        Toast.makeText(context, "ဘောင်ချာ ကူးယူပြီးပါပြီ", Toast.LENGTH_SHORT).show()
+                                                    },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(Icons.Default.ContentCopy, contentDescription = "ကူးယူမည်", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                                }
 
-                                if (footerText.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = footerText,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        coroutineScope.launch {
+                                                            val success = BluetoothPrinter.printVoucher(context, voucherWithBets, customerName, footerText)
+                                                            if (success) {
+                                                                Toast.makeText(context, "ပရင့် ထုတ်ပြီးပါပြီ", Toast.LENGTH_SHORT).show()
+                                                            } else {
+                                                                Toast.makeText(context, "ပရင်တာ ချိတ်ဆက်မှု မအောင်မြင်ပါ", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        }
+                                                    },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Print, contentDescription = "ပရင့်ထုတ်မည်", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                                }
 
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                // Action Buttons Row: Copy, Print, Share, Delete
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Copy
-                                    IconButton(
-                                        onClick = {
-                                            val text = buildVoucherText(voucherWithBets, customerName, footerText)
-                                            clipboardManager.setText(AnnotatedString(text))
-                                            Toast.makeText(context, "ဘောင်ချာ ကူးယူပြီးပါပြီ", Toast.LENGTH_SHORT).show()
-                                        },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                    }
-
-                                    // Bluetooth Print
-                                    IconButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                val success = BluetoothPrinter.printVoucher(context, voucherWithBets, customerName, footerText)
-                                                if (success) {
-                                                    Toast.makeText(context, "ပရင့် ထုတ်ပြီးပါပြီ", Toast.LENGTH_SHORT).show()
-                                                } else {
-                                                    Toast.makeText(context, "ပရင်တာ ချိတ်ဆက်မှု မအောင်မြင်ပါ", Toast.LENGTH_SHORT).show()
+                                                IconButton(
+                                                    onClick = {
+                                                        val text = buildVoucherText(voucherWithBets, customerName, footerText)
+                                                        val sendIntent = Intent().apply {
+                                                            action = Intent.ACTION_SEND
+                                                            putExtra(Intent.EXTRA_TEXT, text)
+                                                            type = "text/plain"
+                                                        }
+                                                        context.startActivity(Intent.createChooser(sendIntent, "ဘောင်ချာ ပေးပို့ရန်"))
+                                                    },
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Icon(Icons.Default.Share, contentDescription = "မျှဝေမည်", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                                                 }
                                             }
-                                        },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(Icons.Default.Print, contentDescription = "Print", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                    }
-
-                                    // Share
-                                    IconButton(
-                                        onClick = {
-                                            val text = buildVoucherText(voucherWithBets, customerName, footerText)
-                                            val sendIntent = Intent().apply {
-                                                action = Intent.ACTION_SEND
-                                                putExtra(Intent.EXTRA_TEXT, text)
-                                                type = "text/plain"
-                                            }
-                                            context.startActivity(Intent.createChooser(sendIntent, "ဘောင်ချာ ပေးပို့ရန်"))
-                                        },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(Icons.Default.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                    }
-
-                                    // Delete
-                                    IconButton(
-                                        onClick = { voucherToDelete = voucherWithBets },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                        }
                                     }
                                 }
                             }
@@ -581,11 +798,11 @@ private fun buildVoucherText(
         val idx = "${i + 1}.".padEnd(4)
         val num = bet.number.padEnd(6)
         val amt = "${bet.amount}".padStart(8)
-        appendLine("$idx $num $amt Ks")
+        appendLine("$idx $num $amt ကျပ်")
     }
     appendLine("------------------------")
     val total = vwb.bets.sumOf { it.amount }
-    appendLine("စုစုပေါင်း : ${total} Ks (${vwb.bets.size} ကွက်)")
+    appendLine("စုစုပေါင်း : ${total} ကျပ် (${vwb.bets.size} ကွက်)")
     appendLine("========================")
     if (footer.isNotBlank()) {
         appendLine(footer)

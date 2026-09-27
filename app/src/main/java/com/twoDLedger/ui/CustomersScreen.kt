@@ -491,7 +491,7 @@ fun CustomerCard(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        "%,d Ks".format(totalAmount),
+                        "%,d ကျပ်".format(totalAmount),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -514,7 +514,7 @@ fun CustomerCard(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        "%,d Ks".format(commCut),
+                        "%,d ကျပ်".format(commCut),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = GoldAccent,
@@ -537,7 +537,7 @@ fun CustomerCard(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        "%,d Ks".format(netAmount),
+                        "%,d ကျပ်".format(netAmount),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary,
@@ -574,7 +574,7 @@ fun CustomerCard(
                     if (customer.paidAmount > 0) {
                         Text("•", fontSize = 10.sp, color = MaterialTheme.colorScheme.outlineVariant)
                         Text(
-                            "ပေးငွေ : %,d Ks".format(customer.paidAmount.toInt()),
+                            "ပေးငွေ : %,d ကျပ်".format(customer.paidAmount.toInt()),
                             fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.secondary,
                             fontWeight = FontWeight.SemiBold
@@ -947,7 +947,7 @@ fun AgentNumbersView(
                     ) {
                         Text("စုစုပေါင်း", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f), fontSize = 13.sp)
                         Text(
-                            "%,d Ks".format(totalAmount),
+                            "%,d ကျပ်".format(totalAmount),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
@@ -960,7 +960,7 @@ fun AgentNumbersView(
                     ) {
                         Text("ကော်မရှင် ($commPct%)", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f), fontSize = 13.sp)
                         Text(
-                            "%,d Ks".format(commCut),
+                            "%,d ကျပ်".format(commCut),
                             color = MaterialTheme.colorScheme.secondary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
@@ -973,7 +973,7 @@ fun AgentNumbersView(
                     ) {
                         Text("ပေးငွေ", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f), fontSize = 13.sp)
                         Text(
-                            "%,d Ks".format(customer.paidAmount.toInt()),
+                            "%,d ကျပ်".format(customer.paidAmount.toInt()),
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             fontSize = 13.sp,
                             fontFamily = FontFamily.Monospace
@@ -998,7 +998,7 @@ fun AgentNumbersView(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            "%,d Ks".format(netAmount),
+                            "%,d ကျပ်".format(netAmount),
                             color = netColor,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Black,
@@ -1076,7 +1076,7 @@ fun AgentNumbersView(
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                "%,d Ks".format(amount),
+                                "%,d ကျပ်".format(amount),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 17.sp,

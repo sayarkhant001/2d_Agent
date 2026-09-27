@@ -35,6 +35,20 @@ data class BatchFinancialSummary(
     val winningNumber: String
 )
 
+data class DineSettlement(
+    val dineId: Int,
+    val dineName: String,
+    val commissionRate: Double,
+    val multiplier: Int,
+    val totalExported: Int,
+    val commissionAmount: Int,
+    val netCost: Int,
+    val winningBets: List<Pair<String, Int>>,
+    val wonAmount: Int,
+    val winningPayout: Long,
+    val netBalance: Long
+)
+
 class MainViewModel(private val repository: LotteryRepository, private val prefs: android.content.SharedPreferences) : ViewModel() {
 
     val customers: StateFlow<List<Customer>> = repository.allCustomers
@@ -62,6 +76,9 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allExportRecords: StateFlow<List<ExportRecordWithNumbers>> = repository.allExportRecords
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val allDines: StateFlow<List<Dine>> = repository.allDines
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
         
         var currentBatch = MutableStateFlow(prefs.getInt("currentBatch", 1))
@@ -229,6 +246,7 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
         viewModelScope.launch {
             repository.purgeOverflowArtifacts()
             ensureDefaultCustomer()
+            ensureDefaultDines()
         }
     }
 
@@ -240,6 +258,34 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
                 repository.insertCustomer(Customer(name = "မိမိ (ကိုယ်တိုင်)", commissionRate = 0.0, multiplier = 80))
             }
         } catch (_: Exception) {}
+    }
+
+    private suspend fun ensureDefaultDines() {
+        try {
+            val list = repository.allDines.first()
+            if (list.isEmpty()) {
+                repository.insertDine(Dine(name = "မညစ်", commissionRate = 15.0, multiplier = 90))
+                repository.insertDine(Dine(name = "ကျော်မဲ", commissionRate = 20.0, multiplier = 80))
+            }
+        } catch (_: Exception) {}
+    }
+
+    fun addDine(name: String, commissionRate: Double, multiplier: Int = 80) {
+        viewModelScope.launch {
+            repository.insertDine(Dine(name = name, commissionRate = commissionRate, multiplier = multiplier))
+        }
+    }
+
+    fun updateDine(dine: Dine) {
+        viewModelScope.launch {
+            repository.updateDine(dine)
+        }
+    }
+
+    fun deleteDine(dine: Dine) {
+        viewModelScope.launch {
+            repository.deleteDine(dine)
+        }
     }
 
     fun saveWinningNumber(number: String, session: String = currentSession.value, batch: Int = currentBatch.value) {
@@ -493,9 +539,128 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
             withContext(Dispatchers.Main) {
                 onComplete?.invoke(recordId)
             }
-            // NOTE: Do NOT insert a Voucher here — that would inflate betMap and
-            // prevent overflowAmount from clearing after export.
         }
+    }
+
+    fun exportOverflowToDine(dine: Dine, onComplete: ((recordId: Int, voucherSerial: Int) -> Unit)? = null) {
+        val currentExposures = ledgerExposures.value
+        val toExport = currentExposures.filter { it.overflowAmount > 0 }
+        if (toExport.isEmpty()) return
+
+        viewModelScope.launch {
+            val totalAmount = toExport.sumOf { it.overflowAmount }
+            // Serial number for this specific Dine in current batch
+            val existingForDine = allExportRecords.value.filter {
+                it.record.batchNumber == currentBatch.value && it.record.dineId == dine.id
+            }
+            val voucherSerial = existingForDine.size + 1
+
+            val record = ExportRecord(
+                batchNumber = currentBatch.value,
+                session = currentSession.value,
+                type = "ဘရိတ်ကျော် တင်ကွက်",
+                totalAmount = totalAmount,
+                dineId = dine.id,
+                dineName = dine.name,
+                voucherSerial = voucherSerial
+            )
+            val recordId = repository.insertExportRecord(record).toInt()
+
+            val exportNumbers = toExport.map {
+                ExportedNumber(exportRecordId = recordId, number = it.number, amount = it.overflowAmount)
+            }
+            repository.insertExportedNumbers(exportNumbers)
+            withContext(Dispatchers.Main) {
+                onComplete?.invoke(recordId, voucherSerial)
+            }
+        }
+    }
+
+    fun getDineSettlementsForBatch(batch: Int = currentBatch.value): List<DineSettlement> {
+        val batchExports = allExportRecords.value.filter { it.record.batchNumber == batch && !it.record.isArchived }
+        val winningNum = getWinningNumberForBatch(batch)
+        val dinesMap = allDines.value.associateBy { it.id }
+
+        val groupedByDine = batchExports.groupBy { it.record.dineId }
+        val settlements = mutableListOf<DineSettlement>()
+
+        val allDineIds = (groupedByDine.keys + dinesMap.keys).filter { it > 0 }.distinct()
+
+        for (dId in allDineIds) {
+            val dine = dinesMap[dId] ?: Dine(id = dId, name = groupedByDine[dId]?.firstOrNull()?.record?.dineName ?: "ဒိုင် #$dId", commissionRate = 15.0, multiplier = 80)
+            val exportsForDine = groupedByDine[dId] ?: emptyList()
+
+            val totalExported = exportsForDine.sumOf { it.record.totalAmount }
+            if (totalExported <= 0 && exportsForDine.isEmpty()) continue
+
+            val commissionAmount = (totalExported * (dine.commissionRate / 100.0)).toInt()
+            val netCost = totalExported - commissionAmount
+
+            val winBets = mutableListOf<Pair<String, Int>>()
+            var wonAmount = 0
+            if (winningNum.length == 2) {
+                exportsForDine.forEach { exp ->
+                    exp.numbers.filter { it.number == winningNum }.forEach { en ->
+                        winBets.add(en.number to en.amount)
+                        wonAmount += en.amount
+                    }
+                }
+            }
+            val winningPayout = (wonAmount.toLong() * dine.multiplier)
+            val netBalance = winningPayout - netCost
+
+            settlements.add(
+                DineSettlement(
+                    dineId = dine.id,
+                    dineName = dine.name,
+                    commissionRate = dine.commissionRate,
+                    multiplier = dine.multiplier,
+                    totalExported = totalExported,
+                    commissionAmount = commissionAmount,
+                    netCost = netCost,
+                    winningBets = winBets,
+                    wonAmount = wonAmount,
+                    winningPayout = winningPayout,
+                    netBalance = netBalance
+                )
+            )
+        }
+
+        val unassigned = groupedByDine[0] ?: emptyList()
+        if (unassigned.isNotEmpty()) {
+            val totalExported = unassigned.sumOf { it.record.totalAmount }
+            val commissionAmount = (totalExported * 0.15).toInt()
+            val netCost = totalExported - commissionAmount
+            val winBets = mutableListOf<Pair<String, Int>>()
+            var wonAmount = 0
+            if (winningNum.length == 2) {
+                unassigned.forEach { exp ->
+                    exp.numbers.filter { it.number == winningNum }.forEach { en ->
+                        winBets.add(en.number to en.amount)
+                        wonAmount += en.amount
+                    }
+                }
+            }
+            val winningPayout = (wonAmount.toLong() * 80)
+            val netBalance = winningPayout - netCost
+            settlements.add(
+                DineSettlement(
+                    dineId = 0,
+                    dineName = "အထွေထွေ ဒိုင်",
+                    commissionRate = 15.0,
+                    multiplier = 80,
+                    totalExported = totalExported,
+                    commissionAmount = commissionAmount,
+                    netCost = netCost,
+                    winningBets = winBets,
+                    wonAmount = wonAmount,
+                    winningPayout = winningPayout,
+                    netBalance = netBalance
+                )
+            )
+        }
+
+        return settlements
     }
 
 

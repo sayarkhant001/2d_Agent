@@ -286,7 +286,7 @@ fun ExportHistoryBottomBar(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
                     Text(
-                        text = "%,d Ks".format(totalAmount),
+                        text = "%,d ကျပ်".format(totalAmount),
                         color = MaterialTheme.colorScheme.onError,
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Black,
@@ -323,16 +323,25 @@ private fun ExportRecordCard(
     val voucherDate = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date(export.record.timestamp))
     val voucherText = buildString {
         appendLine("      တင်ကွက် ဘောင်ချာ    ")
-        appendLine(" ဘောင်ချာ : #${export.record.id}")
+        if (export.record.dineName.isNotBlank()) {
+            appendLine(" ဒိုင်      : ${export.record.dineName}")
+            appendLine(" ဘောင်ချာ : အမှတ် #${export.record.voucherSerial}")
+        } else {
+            appendLine(" ဘောင်ချာ : #${export.record.id}")
+        }
         appendLine(" အချိန်     : ${export.record.session}")
-        appendLine(" အချိန်   : $voucherDate")
+        appendLine(" နေ့စွဲ     : $voucherDate")
         appendLine("------------------------")
         sortedNumbers.forEachIndexed { idx, num ->
             appendLine(" ${idx + 1}. ${num.number} = ${num.amount}")
         }
         appendLine("------------------------")
-        appendLine(" စုစုပေါင်း : %,d Ks".format(export.record.totalAmount))
-        appendLine("   * အထက်ဒိုင် တင်ကွက် *  ")
+        appendLine(" စုစုပေါင်း : %,d ကျပ်".format(export.record.totalAmount))
+        if (export.record.dineName.isNotBlank()) {
+            appendLine("   * ဒိုင် (${export.record.dineName}) သို့ တင်ကွက် *  ")
+        } else {
+            appendLine("   * ဒိုင် တင်ကွက် *  ")
+        }
     }
 
     Card(
@@ -361,7 +370,7 @@ private fun ExportRecordCard(
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
                         ) {
                             Text(
-                                "ဘောင်ချာ #${export.record.id}",
+                                if (export.record.dineName.isNotBlank()) "${export.record.dineName} #${export.record.voucherSerial}" else "ဘောင်ချာ #${export.record.id}",
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.5.sp,
@@ -397,7 +406,7 @@ private fun ExportRecordCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            "%,d Ks".format(export.record.totalAmount),
+                            "%,d ကျပ်".format(export.record.totalAmount),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Black,
                             fontSize = 14.sp,
@@ -412,7 +421,7 @@ private fun ExportRecordCard(
                     Spacer(Modifier.width(6.dp))
                     Icon(
                         imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        contentDescription = if (expanded) "ချုံ့မည်" else "ချဲ့မည်",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(18.dp)
                     )
@@ -488,7 +497,7 @@ private fun ExportRecordCard(
                                     fontFamily = FontFamily.Monospace
                                 )
                                 Text(
-                                    "%,d Ks".format(num.amount),
+                                    "%,d ကျပ်".format(num.amount),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isOverflow) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
@@ -519,7 +528,7 @@ private fun ExportRecordCard(
                             fontSize = 10.5.sp
                         )
                         Text(
-                            "%,d Ks".format(export.record.totalAmount),
+                            "%,d ကျပ်".format(export.record.totalAmount),
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
@@ -611,35 +620,35 @@ fun UpperAgentSettlementDialog(
 
     fun buildSlip(): String = buildString {
         appendLine("========================")
-        appendLine("   အထက်ဒိုင် ရှင်းတမ်း")
+        appendLine("      ဒိုင် ရှင်းတမ်း")
         appendLine("========================")
         appendLine("အကြိမ် = $batchNumber ( $winningNumber )")
         appendLine("------------------------")
-        appendLine("တင်ငွေ စုစုပေါင်း = %,d Ks".format(totalSentBet))
-        appendLine("ကော်မရှင် ($commPercentText%) = -%,d Ks".format(commDeduction))
-        appendLine("နုတ်ပြီး တင်ငွေ = %,d Ks".format(netSentBet))
+        appendLine("တင်ငွေ စုစုပေါင်း = %,d ကျပ်".format(totalSentBet))
+        appendLine("ကော်မရှင် ($commPercentText%) = -%,d ကျပ်".format(commDeduction))
+        appendLine("နုတ်ပြီး တင်ငွေ = %,d ကျပ်".format(netSentBet))
         appendLine("------------------------")
         if (exactBetAmt > 0) {
-            appendLine("ဒဲ့ပေါက် ($winningNumber) = %,d Ks (x${exactMult.toInt()}) → %,d Ks".format(exactBetAmt, exactPayout))
+            appendLine("ဒဲ့ပေါက် ($winningNumber) = %,d ကျပ် (x${exactMult.toInt()}) → %,d ကျပ်".format(exactBetAmt, exactPayout))
         }
         if (tutBetAmt > 0) {
-            appendLine("R (ပြန်ပေါက်) = %,d Ks (x${permMult.toInt()}) → %,d Ks".format(tutBetAmt, tutPayout))
+            appendLine("R (ပြန်ပေါက်) = %,d ကျပ် (x${permMult.toInt()}) → %,d ကျပ်".format(tutBetAmt, tutPayout))
             tutBreakdown.forEach { (num, amt) ->
-                appendLine("  • $num: %,d Ks → %,d Ks".format(amt, (amt * permMult).toLong()))
+                appendLine("  • $num: %,d ကျပ် → %,d ကျပ်".format(amt, (amt * permMult).toLong()))
             }
         }
         if (totalUpperPayout == 0L) {
-            appendLine("ပေါက်ကြေး = 0 Ks (ပေါက်ဂဏန်း မပါပါ)")
+            appendLine("ပေါက်ကြေး = ၀ ကျပ် (ပေါက်ဂဏန်း မပါပါ)")
         } else {
-            appendLine("စုစုပေါင်း ပေါက်ငွေ = %,d Ks".format(totalUpperPayout))
+            appendLine("စုစုပေါင်း ပေါက်ငွေ = %,d ကျပ်".format(totalUpperPayout))
         }
         appendLine("------------------------")
         if (netBalance > 0) {
-            appendLine("ရလဒ် = အထက်ဒိုင်မှ ရရန် (+%,d Ks)".format(netBalance))
+            appendLine("ရလဒ် = ဒိုင်မှ ရရန် (+%,d ကျပ်)".format(netBalance))
         } else if (netBalance < 0) {
-            appendLine("ရလဒ် = အထက်ဒိုင်သို့ ပေးရန် (-%,d Ks)".format(-netBalance))
+            appendLine("ရလဒ် = ဒိုင်သို့ ပေးရန် (-%,d ကျပ်)".format(-netBalance))
         } else {
-            appendLine("ရလဒ် = ကျေအေး (0 Ks)")
+            appendLine("ရလဒ် = ကျေအေး (၀ ကျပ်)")
         }
         appendLine("========================")
     }
@@ -663,7 +672,7 @@ fun UpperAgentSettlementDialog(
                     }
                     Spacer(Modifier.width(8.dp))
                     Column {
-                        Text("အထက်ဒိုင် ရှင်းတမ်း", fontWeight = FontWeight.Bold, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("ဒိုင် ရှင်းတမ်း", fontWeight = FontWeight.Bold, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text("၂ လုံးထီ ရှင်းတမ်း", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.5.sp)
                     }
                 }
@@ -703,7 +712,7 @@ fun UpperAgentSettlementDialog(
 
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("တင်ငွေ စုစုပေါင်း", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("%,d Ks".format(totalSentBet), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Text("%,d ကျပ်".format(totalSentBet), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     }
 
                     // Editable commission % row
@@ -741,7 +750,7 @@ fun UpperAgentSettlementDialog(
                             }
                         }
                         Text(
-                            "-%,d Ks".format(commDeduction),
+                            "-%,d ကျပ်".format(commDeduction),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
@@ -754,7 +763,7 @@ fun UpperAgentSettlementDialog(
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("နုတ်ပြီး တင်ငွေ", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            "%,d Ks".format(netSentBet),
+                            "%,d ကျပ်".format(netSentBet),
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.ExtraBold,
                             fontFamily = FontFamily.Monospace,
@@ -778,7 +787,7 @@ fun UpperAgentSettlementDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        "အထက်ဒိုင် ပေါက်ကြေး (လျော်ငွေ)",
+                        "ဒိုင် ပေါက်ကြေး (လျော်ငွေ)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.5.sp,
                         color = if (totalUpperPayout > 0) WinExactRed else MaterialTheme.colorScheme.onSurfaceVariant
@@ -792,7 +801,7 @@ fun UpperAgentSettlementDialog(
                                 Text("ဒဲ့ ($winningNumber)", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = WinExactRed)
                             }
                             Text(
-                                "%,d Ks (x${exactMult.toInt()}) → %,d Ks".format(exactBetAmt, exactPayout),
+                                "%,d ကျပ် (x${exactMult.toInt()}) → %,d ကျပ်".format(exactBetAmt, exactPayout),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace
@@ -808,7 +817,7 @@ fun UpperAgentSettlementDialog(
                                 Text("တွတ် (${tutBreakdown.size} ကွက်)", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = GoldDark)
                             }
                             Text(
-                                "%,d Ks (x${permMult.toInt()}) → %,d Ks".format(tutBetAmt, tutPayout),
+                                "%,d ကျပ် (x${permMult.toInt()}) → %,d ကျပ်".format(tutBetAmt, tutPayout),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace
@@ -822,14 +831,14 @@ fun UpperAgentSettlementDialog(
                                 Alignment.CenterVertically
                             ) {
                                 Text("• $num", fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("%,d Ks → %,d Ks".format(amt, (amt * permMult).toLong()), fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("%,d ကျပ် → %,d ကျပ်".format(amt, (amt * permMult).toLong()), fontSize = 9.5.sp, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
 
                     if (totalUpperPayout == 0L) {
                         Text(
-                            "ပေါက်ဂဏန်း မပါပါ (ပေါက်ငွေ 0 Ks)",
+                            "ပေါက်ဂဏန်း မပါပါ (ပေါက်ငွေ ၀ ကျပ်)",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
@@ -841,7 +850,7 @@ fun UpperAgentSettlementDialog(
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("စုစုပေါင်း ပေါက်ငွေ", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            "%,d Ks".format(totalUpperPayout),
+                            "%,d ကျပ်".format(totalUpperPayout),
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.ExtraBold,
                             fontFamily = FontFamily.Monospace,
@@ -881,8 +890,8 @@ fun UpperAgentSettlementDialog(
                 ) {
                     Text(
                         text = when {
-                            isToReceive -> "အထက်ဒိုင်မှ ရရန်"
-                            isToPay -> "အထက်ဒိုင်သို့ ပေးရန်"
+                            isToReceive -> "ဒိုင်မှ ရရန်"
+                            isToPay -> "ဒိုင်သို့ ပေးရန်"
                             else -> "ကျေအေး (ရှင်းပြီး)"
                         },
                         fontWeight = FontWeight.Bold,
@@ -891,9 +900,9 @@ fun UpperAgentSettlementDialog(
                     )
                     Text(
                         text = when {
-                            isToReceive -> "+%,d Ks".format(netBalance)
-                            isToPay -> "-%,d Ks".format(-netBalance)
-                            else -> "0 Ks"
+                            isToReceive -> "+%,d ကျပ်".format(netBalance)
+                            isToPay -> "-%,d ကျပ်".format(-netBalance)
+                            else -> "၀ ကျပ်"
                         },
                         fontWeight = FontWeight.Black,
                         fontSize = 16.sp,
@@ -916,7 +925,7 @@ fun UpperAgentSettlementDialog(
                             putExtra(Intent.EXTRA_TEXT, slip)
                             type = "text/plain"
                         }
-                        val shareIntent = Intent.createChooser(sendIntent, "အထက်ဒိုင် ရှင်းတမ်း မျှဝေမည်")
+                        val shareIntent = Intent.createChooser(sendIntent, "ဒိုင် ရှင်းတမ်း မျှဝေမည်")
                         context.startActivity(shareIntent)
                     },
                     modifier = Modifier.weight(1f).height(36.dp),

@@ -248,7 +248,7 @@ fun TwoDMarketCalendarDialog(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "$monthNameEn $displayedYear",
+                            text = "ဈေးကွက် ပြက္ခဒိန်",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

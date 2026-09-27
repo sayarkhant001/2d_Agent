@@ -115,11 +115,11 @@ private fun ArchiveTotalsBar(batches: List<ArchiveBatchSummary>) {
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            TotalStat(label = "Batch",   value = "${batches.size}",       icon = Icons.Default.Archive)
+            TotalStat(label = "ပွဲစဉ်",   value = "${batches.size}",       icon = Icons.Default.Archive)
             VerticalDividerLine()
-            TotalStat(label = "Voucher", value = "$totalVouchers",         icon = Icons.Default.Receipt)
+            TotalStat(label = "ဘောင်ချာ", value = "$totalVouchers",         icon = Icons.Default.Receipt)
             VerticalDividerLine()
-            TotalStat(label = "Amount",  value = "${"%,d".format(grandTotal)} Ks", icon = Icons.Default.Payments)
+            TotalStat(label = "ငွေပမာဏ",  value = "${"%,d".format(grandTotal)} ကျပ်", icon = Icons.Default.Payments)
         }
     }
 }
@@ -178,7 +178,7 @@ private fun ArchiveBatchCard(
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Batch ${batch.batchNumber}", fontWeight = FontWeight.Bold,
+                    Text("ပွဲစဉ် ${batch.batchNumber}", fontWeight = FontWeight.Bold,
                         fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                     val dateLabel = if (batch.minDate == batch.maxDate) batch.minDate
                                     else "${batch.minDate} – ${batch.maxDate}"
@@ -191,7 +191,7 @@ private fun ArchiveBatchCard(
                     color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
-                        "${"%,d".format(batch.totalAmount)} Ks",
+                        "${"%,d".format(batch.totalAmount)} ကျပ်",
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,

@@ -194,7 +194,7 @@ fun LedgerScreen(
                                 border = BorderStroke(1.dp, if (exactWonBetsSum > 0) CobaltMedium.copy(alpha = 0.35f) else Color.Transparent)
                             ) {
                                 Text(
-                                    if (exactWonBetsSum > 0) "ဒဲ့ပေါက် %,d Ks".format(exactWonBetsSum)
+                                    if (exactWonBetsSum > 0) "ဒဲ့ပေါက် %,d ကျပ်".format(exactWonBetsSum)
                                     else "ပေါက်သီး မရှိပါ",
                                     color = if (exactWonBetsSum > 0) CobaltDark else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp,
@@ -323,7 +323,7 @@ fun LedgerScreen(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    "Ks",
+                                    "ကျပ်",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     fontFamily = FontFamily.Monospace
@@ -454,7 +454,7 @@ fun LedgerScreen(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    "Ks",
+                                    "ကျပ်",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     fontFamily = FontFamily.Monospace
@@ -487,12 +487,12 @@ fun LedgerScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
                                 Text("ထိုးကြေး : ", color = Color.White.copy(alpha = 0.85f), fontSize = if (rDimens.isCompact) 11.sp else 12.sp, maxLines = 1)
-                                Text("%,d Ks".format(totalAll), color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (rDimens.isCompact) 12.sp else 14.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                Text("%,d ကျပ်".format(totalAll), color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (rDimens.isCompact) 12.sp else 14.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
                             }
                             Spacer(Modifier.width(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("ပေါက်ကြေး : ", color = Color.White.copy(alpha = 0.85f), fontSize = if (rDimens.isCompact) 11.sp else 12.sp, maxLines = 1)
-                                Text("%,d Ks".format(totalWonBets), color = Color(0xFFFFD54F), fontWeight = FontWeight.Bold, fontSize = if (rDimens.isCompact) 12.sp else 14.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                Text("%,d ကျပ်".format(totalWonBets), color = Color(0xFFFFD54F), fontWeight = FontWeight.Bold, fontSize = if (rDimens.isCompact) 12.sp else 14.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
                             }
                         }
 
@@ -506,13 +506,13 @@ fun LedgerScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
                                 Text("လျော်ကြေး : ", color = Color.White.copy(alpha = 0.85f), fontSize = if (rDimens.isCompact) 11.sp else 12.sp, maxLines = 1)
-                                Text("%,.0f Ks".format(totalPayout), color = if (totalPayout > 0) Color(0xFFFF8A80) else Color.White, fontWeight = FontWeight.ExtraBold, fontSize = if (rDimens.isCompact) 12.sp else 14.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
+                                Text("%,.0f ကျပ်".format(totalPayout), color = if (totalPayout > 0) Color(0xFFFF8A80) else Color.White, fontWeight = FontWeight.ExtraBold, fontSize = if (rDimens.isCompact) 12.sp else 14.sp, fontFamily = FontFamily.Monospace, maxLines = 1)
                             }
                             Spacer(Modifier.width(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(if (netBalance >= 0) "အမြတ် : " else "အရှုံး : ", color = Color.White.copy(alpha = 0.85f), fontSize = if (rDimens.isCompact) 11.sp else 12.sp, maxLines = 1)
                                 Text(
-                                    "${if (netBalance >= 0) "+" else ""}${"%,.0f Ks".format(netBalance)}",
+                                    "${if (netBalance >= 0) "+" else ""}${"%,.0f ကျပ်".format(netBalance)}",
                                     color = if (netBalance >= 0) Color(0xFF69F0AE) else Color(0xFFFF5252),
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = if (rDimens.isCompact) 12.sp else 14.sp,
@@ -546,7 +546,7 @@ fun LedgerScreen(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                "Ks",
+                                "ကျပ်",
                                 color = Color.White.copy(alpha = 0.85f),
                                 fontSize = 13.sp,
                                 fontFamily = FontFamily.Monospace

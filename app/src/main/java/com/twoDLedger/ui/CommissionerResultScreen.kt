@@ -83,18 +83,18 @@ private fun buildClipText(s: AgentSettlement, batch: Int, winNum: String): Strin
         appendLine("========================")
         appendLine("၂ လုံးထီ ထွက်ဂဏန်း: $winNum")
         appendLine("အမည် = ${s.customer.name}")
-        appendLine("ရောင်းကြေး = ${fmt(s.totalBet)} Ks")
-        appendLine("ကော်မရှင် = ${fmt(s.commission)} Ks")
-        appendLine("နုတ်ပြီးငွေ = ${fmt(s.netAfterComm)} Ks")
-        if (s.exactBetAmt > 0) appendLine("ဒဲ့ ထိုးငွေ = ${fmt(s.exactBetAmt)} Ks (လျော် = ${fmt(s.exactPayout)} Ks)")
-        if (s.tuwtPayout  > 0) appendLine("တွတ် လျော်ငွေ = ${fmt(s.tuwtPayout)} Ks")
-        appendLine("စုစုပေါင်း လျော်ငွေ = ${fmt(s.totalPayout)} Ks")
+        appendLine("ရောင်းကြေး = ${fmt(s.totalBet)} ကျပ်")
+        appendLine("ကော်မရှင် = ${fmt(s.commission)} ကျပ်")
+        appendLine("နုတ်ပြီးငွေ = ${fmt(s.netAfterComm)} ကျပ်")
+        if (s.exactBetAmt > 0) appendLine("ဒဲ့ ထိုးငွေ = ${fmt(s.exactBetAmt)} ကျပ် (လျော် = ${fmt(s.exactPayout)} ကျပ်)")
+        if (s.tuwtPayout  > 0) appendLine("တွတ် လျော်ငွေ = ${fmt(s.tuwtPayout)} ကျပ်")
+        appendLine("စုစုပေါင်း လျော်ငွေ = ${fmt(s.totalPayout)} ကျပ်")
         appendLine("------------------------")
         val balTag = if (s.balance < 0) "(ပေးရန်)" else "(ရရန်)"
         val remTag = if (s.remaining < 0) "(ပေးရန်)" else "(ရရန်)"
-        appendLine("ကျန်ငွေ $balTag = ${fmt(s.balance)} Ks")
-        appendLine("ပေးငွေ = ${fmt(s.paidAmount)} Ks")
-        appendLine("ကြွေးကျန် $remTag = ${fmt(s.remaining)} Ks")
+        appendLine("ကျန်ငွေ $balTag = ${fmt(s.balance)} ကျပ်")
+        appendLine("ပေးငွေ = ${fmt(s.paidAmount)} ကျပ်")
+        appendLine("ကြွေးကျန် $remTag = ${fmt(s.remaining)} ကျပ်")
         appendLine("========================")
     }
 
@@ -689,22 +689,22 @@ fun AgentSettlementCard(
                 ) {
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("လျော်ငွေ", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${fmt(s.totalPayout)} Ks", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                        Text("${fmt(s.totalPayout)} ကျပ်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         val balLabel = if (s.balance < 0) "ကျန်ငွေ (ပေးရန်)" else "ကျန်ငွေ (ရရန်)"
                         Text(balLabel, fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold, color = if (s.balance < 0) ResRed else ResGreen)
-                        Text("${fmt(s.balance)} Ks", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (s.balance < 0) ResRed else ResGreen)
+                        Text("${fmt(s.balance)} ကျပ်", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (s.balance < 0) ResRed else ResGreen)
                     }
                     HorizontalDivider(color = CardBorderSubtle.copy(alpha = 0.4f), thickness = 0.5.dp)
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         Text("ပေးငွေ", fontSize = 9.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${fmt(s.paidAmount)} Ks", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
+                        Text("${fmt(s.paidAmount)} ကျပ်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurface)
                     }
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                         val remLabel = if (s.remaining < 0) "ကြွေးကျန် (ပေးရန်)" else "ကြွေးကျန် (ရရန်)"
                         Text(remLabel, fontSize = 9.5.sp, fontWeight = FontWeight.SemiBold, color = if (s.remaining < 0) ResRed else ResGreen)
-                        Text("${fmt(s.remaining)} Ks", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (s.remaining < 0) ResRed else ResGreen)
+                        Text("${fmt(s.remaining)} ကျပ်", fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.Monospace, color = if (s.remaining < 0) ResRed else ResGreen)
                     }
                 }
 
@@ -777,7 +777,7 @@ private fun WinRow(
             Text(label, color = iconTint, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val amountText = "$bet Ks  →  $payout Ks"
+            val amountText = "$bet ကျပ်  →  $payout ကျပ်"
             val fontSize = if (amountText.length > 25) 9.5.sp else 11.sp
             Text(
                 amountText,
@@ -929,12 +929,12 @@ fun WinBreakdownDialog(
                         Box(Modifier.width(1.dp).height(24.dp).background(CardBorderSubtle))
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("ထိုးငွေ စုစုပေါင်း", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("${fmt(totalBet)} Ks", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
+                            Text("${fmt(totalBet)} ကျပ်", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
                         }
                         Box(Modifier.width(1.dp).height(24.dp).background(CardBorderSubtle))
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("လျော်ငွေ စုစုပေါင်း", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("${fmt(totalPayout)} Ks", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = iconTint, fontFamily = FontFamily.Monospace)
+                            Text("${fmt(totalPayout)} ကျပ်", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = iconTint, fontFamily = FontFamily.Monospace)
                         }
                     }
                 }
@@ -1018,7 +1018,7 @@ fun WinBreakdownDialog(
                                 )
                                 // Payout
                                 Text(
-                                    "${fmt(item.payout)} Ks",
+                                    "${fmt(item.payout)} ကျပ်",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 12.sp,
                                     fontFamily = FontFamily.Monospace,
@@ -1070,8 +1070,8 @@ fun WinBreakdownDialog(
                                 appendLine("${it.number}=>>${it.amount}")
                             }
                             appendLine("------------------------")
-                            appendLine("စုစုပေါင်း ထိုးငွေ = ${fmt(totalBet)} Ks")
-                            appendLine("စုစုပေါင်း လျော်ငွေ = ${fmt(totalPayout)} Ks")
+                            appendLine("စုစုပေါင်း ထိုးငွေ = ${fmt(totalBet)} ကျပ်")
+                            appendLine("စုစုပေါင်း လျော်ငွေ = ${fmt(totalPayout)} ကျပ်")
                         }
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("WinDetails", textToCopy))

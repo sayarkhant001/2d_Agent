@@ -53,6 +53,15 @@ data class Bet(
     val amount: Int
 )
 
+@Entity(tableName = "dines")
+@Serializable
+data class Dine(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val name: String,
+    val commissionRate: Double = 0.0, // Commission percent received from Dine (e.g. 15.0%)
+    val multiplier: Int = 80 // Default 80x for 2D
+)
+
 @Entity(tableName = "export_records")
 data class ExportRecord(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -61,7 +70,10 @@ data class ExportRecord(
     val type: String,
     val totalAmount: Int,
     val timestamp: Long = System.currentTimeMillis(),
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val dineId: Int = 0,
+    val dineName: String = "",
+    val voucherSerial: Int = 1
 )
 
 @Entity(tableName = "banned_numbers")

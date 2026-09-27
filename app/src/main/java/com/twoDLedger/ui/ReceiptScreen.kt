@@ -52,7 +52,7 @@ fun ReceiptScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text("လုပ်ဆောင်မှု အောင်မြင်ပါသည်", fontSize = 16.sp)
-            Text("-155,000.00 (Ks)", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text("-155,000.00 (ကျပ်)", fontSize = 32.sp, fontWeight = FontWeight.Bold)
             
             Spacer(modifier = Modifier.height(32.dp))
             
@@ -62,7 +62,7 @@ fun ReceiptScreen(
             ReceiptRow("လုပ်ဆောင်မှုအမှတ်", "01004241061182046686")
             ReceiptRow("လုပ်ဆောင်မှုအမျိုးအစား", "ငွေလွှဲ")
             ReceiptRow("ငွေလွှဲမည် သူ", "U AUNG MYO WIN (******2720)")
-            ReceiptRow("ငွေပမာဏ", "-155,000.00 Ks")
+            ReceiptRow("ငွေပမာဏ", "-155,000.00 ကျပ်")
             ReceiptRow("မှတ်ချက်", "ငွေပေးချေခြင်း")
             
             Spacer(modifier = Modifier.weight(1f))
@@ -78,7 +78,7 @@ fun ReceiptScreen(
                         Text("KBZ\nPay", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Scan ဖတ်ပြီး ငွေပေးချေပမှုကို အတည်ပြူပါ")
+                    Text("စကင်ဖတ်ပြီး ငွေပေးချေမှုကို အတည်ပြုပါ")
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))

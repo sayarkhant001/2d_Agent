@@ -185,7 +185,8 @@ fun AppNavigation(
             VouchersScreen(
                 viewModel = viewModel,
                 initialCustomerId = route.customerId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToWinner = { navController.navigate(WinnerRoute) }
             )
         }
         composable<ReceiptRoute> {

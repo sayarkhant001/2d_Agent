@@ -494,7 +494,7 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                                                 color = Color(0xFFFFB300).copy(alpha = 0.18f)
                                             ) {
                                                 Text(
-                                                    "ကန့်သတ်: %,d Ks".format(banned.amountLimit),
+                                                    "ကန့်သတ်: %,d ကျပ်".format(banned.amountLimit),
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = Color(0xFFFFB300),
@@ -505,7 +505,7 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                                     }
                                     if (banned.amountLimit > 0) {
                                         Text(
-                                            "လက်ရှိထိုးငွေ: %,d Ks / ကျန်: %,d Ks".format(
+                                            "လက်ရှိထိုးငွေ: %,d ကျပ် / ကျန်: %,d ကျပ်".format(
                                                 currentBet,
                                                 (banned.amountLimit - currentBet).coerceAtLeast(0)
                                             ),
@@ -540,7 +540,7 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
+            TextButton(onClick = onDismiss) { Text("ကောင်းပြီ", fontWeight = FontWeight.Bold) }
         }
     )
 

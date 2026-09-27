@@ -748,7 +748,7 @@ fun BettingScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
-                                " Ks",
+                                " ကျပ်",
                                 fontSize = 11.sp,
                                 color = Color(0xFF6B7280),
                                 fontFamily = FontFamily.Monospace
@@ -825,7 +825,7 @@ fun BettingScreen(
                             else                       -> 12.5.sp
                         }
                         Text(
-                            "= %,d Ks".format(totalAmount),
+                            "= %,d ကျပ်".format(totalAmount),
                             fontWeight = FontWeight.Black,
                             fontSize = amountFontSize,
                             lineHeight = 15.sp,
@@ -1124,7 +1124,7 @@ fun BettingScreen(
                                         )
                                         Spacer(Modifier.width(2.dp))
                                         Text(
-                                            "Ks",
+                                            "ကျပ်",
                                             fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.outline,
                                             fontWeight = FontWeight.Bold
@@ -1316,8 +1316,8 @@ fun BettingScreen(
                                 TactileKeypadButton("0", modifier = Modifier.weight(1f)) { appendText("0") }
                                 TactileKeypadButton("00", modifier = Modifier.weight(1f)) { appendText("00") }
                                 TactileKeypadButton(
-                                    text = "OK",
-                                    subtitle = "ထည့်မည်",
+                                    text = "ထည့်မည်",
+                                    subtitle = null,
                                     bgColor = BettingPrimary,
                                     contentColor = Color.White,
                                     borderColor = BettingPrimary,
@@ -1602,7 +1602,7 @@ fun BettingScreen(
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Text("ကျသင့်ငွေ :", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                                     Text(
-                                        "= %,d Ks".format(totalAmount),
+                                        "= %,d ကျပ်".format(totalAmount),
                                         fontWeight = FontWeight.Black,
                                         fontSize = 17.sp,
                                         color = BettingPrimary,
@@ -1691,7 +1691,7 @@ fun BettingScreen(
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     Text("စုစုပေါင်း ပမာဏ :", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("%,d Ks".format(totalAmount), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, fontFamily = FontFamily.Monospace, fontSize = 14.sp)
+                                    Text("%,d ကျပ်".format(totalAmount), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, fontFamily = FontFamily.Monospace, fontSize = 14.sp)
                                 }
                             }
                         }

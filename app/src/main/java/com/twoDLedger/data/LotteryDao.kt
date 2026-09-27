@@ -49,6 +49,18 @@ interface LotteryDao {
     @Query("SELECT * FROM customers WHERE name NOT LIKE '%တင်ကွက်%' AND name NOT LIKE '%overflow%' AND name NOT LIKE '%upper%' AND name NOT LIKE '%အထက်ဒိုင်%' ORDER BY name ASC")
     fun getAllCustomers(): Flow<List<Customer>>
 
+    @Query("SELECT * FROM dines ORDER BY name ASC")
+    fun getAllDines(): Flow<List<Dine>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDine(dine: Dine): Long
+
+    @Update
+    suspend fun updateDine(dine: Dine)
+
+    @Delete
+    suspend fun deleteDine(dine: Dine)
+
     @Query("SELECT * FROM banned_numbers")
     fun getAllBannedNumbers(): Flow<List<BannedNumber>>
 

@@ -13,7 +13,12 @@ class LotteryRepository(private val lotteryDao: LotteryDao) {
     val numberExposures: Flow<List<NumberExposure>> = lotteryDao.getNumberExposures()
     val allBannedNumbers: Flow<List<BannedNumber>> = lotteryDao.getAllBannedNumbers()
     val allExportRecords: Flow<List<ExportRecordWithNumbers>> = lotteryDao.getAllExportRecords()
+    val allDines: Flow<List<Dine>> = lotteryDao.getAllDines()
     val winningHistory: Flow<List<WinningHistory>> = lotteryDao.getWinningHistory()
+
+    suspend fun insertDine(dine: Dine): Long = lotteryDao.insertDine(dine)
+    suspend fun updateDine(dine: Dine) = lotteryDao.updateDine(dine)
+    suspend fun deleteDine(dine: Dine) = lotteryDao.deleteDine(dine)
 
     fun getVouchersWithBetsBySession(session: String): Flow<List<VoucherWithBets>> {
         return lotteryDao.getVouchersWithBetsBySession(session)

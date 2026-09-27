@@ -189,7 +189,7 @@ class ComposeUiIntegrationTest {
 
         composeTestRule.onNodeWithText("အကြိမ် (15) တင်ငွေ စုစုပေါင်း", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("ဘောင်ချာ (1) စောင် • (6) ဂဏန်း", substring = true).assertIsDisplayed()
-        composeTestRule.onNodeWithText("16,000 Ks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("16,000 ကျပ်").assertIsDisplayed()
     }
 
     @Test
@@ -220,11 +220,11 @@ class ComposeUiIntegrationTest {
 
         // Verify FinTech Financial 3-Col Metrics
         composeTestRule.onNodeWithText("စုစုပေါင်း").assertIsDisplayed()
-        composeTestRule.onNodeWithText("1,535,000 Ks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("1,535,000 ကျပ်").assertIsDisplayed()
         composeTestRule.onNodeWithText("ကော်မရှင်").assertIsDisplayed()
-        composeTestRule.onNodeWithText("353,050 Ks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("353,050 ကျပ်").assertIsDisplayed()
         composeTestRule.onNodeWithText("နုတ်ပြီးငွေ").assertIsDisplayed()
-        composeTestRule.onNodeWithText("1,181,950 Ks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("1,181,950 ကျပ်").assertIsDisplayed()
 
         // Verify Voucher & Navigation elements
         composeTestRule.onNodeWithText("ဘောင်ချာ : 13 စောင်").assertIsDisplayed()

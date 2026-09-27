@@ -267,13 +267,13 @@ object BluetoothPrinter {
         val rightEdge = width - pad - 24f
 
         // Pre-compute max amount string width so the column stays fixed
-        val maxAmtStr = data.bets.maxOfOrNull { "%,d Ks".format(it.second) } ?: ""
+        val maxAmtStr = data.bets.maxOfOrNull { "%,d ကျပ်".format(it.second) } ?: ""
         paint.textAlign = android.graphics.Paint.Align.RIGHT
         val amtColumnWidth = paint.measureText(maxAmtStr) + 8f
         paint.textAlign = android.graphics.Paint.Align.LEFT
 
         data.bets.forEachIndexed { idx, (number, amount) ->
-            val amtStr = "%,d Ks".format(amount)
+            val amtStr = "%,d ကျပ်".format(amount)
             // Number — left aligned
             paint.textAlign = android.graphics.Paint.Align.LEFT
             canvas.drawText(number, betIndent, y + betLineH * 0.72f, paint)
@@ -313,7 +313,7 @@ object BluetoothPrinter {
         paint.color = Color.BLACK
         canvas.drawText("စုစုပေါင်း", pad + 12f, y + bigLineH * 0.55f, paint)
         paint.textAlign = android.graphics.Paint.Align.RIGHT
-        canvas.drawText("%,d Ks".format(data.totalAmount), width - pad - 12f, y + bigLineH * 0.55f, paint)
+        canvas.drawText("%,d ကျပ်".format(data.totalAmount), width - pad - 12f, y + bigLineH * 0.55f, paint)
         y += bigLineH + 8f
 
         drawSeparator(y)

@@ -218,7 +218,7 @@ fun HomeScreen(
                                 )
                             }
                             Text(
-                                text = "2D Ledger Prime Edition",
+                                text = "2D ဒိုင်ချုပ် စာရင်းစနစ်",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
@@ -236,7 +236,7 @@ fun HomeScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "2D Calendar",
+                            contentDescription = "2D ပြက္ခဒိန်",
                             tint = CobaltPrimary,
                             modifier = Modifier.size(24.dp)
                         )
@@ -281,7 +281,7 @@ fun HomeScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = "ဆက်တင်",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(22.dp)
                         )
@@ -442,7 +442,7 @@ fun HomeScreen(
                                         .background(Color(0xFF10B981))
                                 )
                                 Text(
-                                    text = "🇹🇭 Thai 2D Live Market",
+                                    text = "🇹🇭 ထိုင်း 2D တိုက်ရိုက်ဈေးကွက်",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -450,7 +450,7 @@ fun HomeScreen(
                             }
                             if (liveData != null && liveData!!.twod.isNotBlank()) {
                                 Text(
-                                    text = "Live: ${liveData!!.twod}",
+                                    text = "တိုက်ရိုက်: ${liveData!!.twod}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Black,
                                     fontFamily = FontFamily.Monospace,
@@ -538,14 +538,14 @@ fun HomeScreen(
                             BatchStatItem(
                                 modifier = Modifier.weight(1f),
                                 label = "အရောင်းကြေး",
-                                value = "%,d Ks".format(stats.totalSales),
+                                value = "%,d ကျပ်".format(stats.totalSales),
                                 icon = Icons.Default.AccountBalanceWallet,
                                 accentColor = CobaltPrimary
                             )
                             BatchStatItem(
                                 modifier = Modifier.weight(1f),
                                 label = "ကျန်ရှိငွေ",
-                                value = "%,d Ks".format(stats.netBalance),
+                                value = "%,d ကျပ်".format(stats.netBalance),
                                 icon = Icons.Default.AccountBalance,
                                 accentColor = Color(0xFF059669)
                             )
@@ -559,14 +559,14 @@ fun HomeScreen(
                             BatchStatItem(
                                 modifier = Modifier.weight(1f),
                                 label = "ကော်မရှင်ခ",
-                                value = "%,d Ks".format(stats.commissionAmount),
+                                value = "%,d ကျပ်".format(stats.commissionAmount),
                                 icon = Icons.Default.Percent,
                                 accentColor = Color(0xFFD97706)
                             )
                             BatchStatItem(
                                 modifier = Modifier.weight(1f),
                                 label = if (stats.isDeclared) "ပေါက်သီး လျော်ငွေ" else "တင်ကွက်ငွေ",
-                                value = "%,d Ks".format(if (stats.isDeclared) stats.winningPayout else stats.exportedAmount.toLong()),
+                                value = "%,d ကျပ်".format(if (stats.isDeclared) stats.winningPayout else stats.exportedAmount.toLong()),
                                 icon = if (stats.isDeclared) Icons.Default.EmojiEvents else Icons.Default.Payment,
                                 accentColor = if (stats.isDeclared) Color(0xFFDC2626) else Color(0xFF7C3AED)
                             )
@@ -677,7 +677,7 @@ fun HomeScreen(
                                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                                             ) {
                                                 Text(
-                                                    text = "ပွဲစဉ် (Batch) #$b",
+                                                    text = "ပွဲစဉ် #$b",
                                                     fontWeight = if (b == currentBatch) FontWeight.Black else FontWeight.Medium,
                                                     fontSize = 14.sp,
                                                     color = if (b == currentBatch) CobaltPrimary else MaterialTheme.colorScheme.onSurface
@@ -764,7 +764,7 @@ fun HomeScreen(
                                 )
                                 Text(
                                     text = bannedNumbers.joinToString(", ") {
-                                        if (it.amountLimit > 0) "${it.number} (≤%,d Ks)".format(it.amountLimit)
+                                        if (it.amountLimit > 0) "${it.number} (≤%,d ကျပ်)".format(it.amountLimit)
                                         else "${it.number} (လုံးဝပိတ်)"
                                     },
                                     color = MaterialTheme.colorScheme.error,
