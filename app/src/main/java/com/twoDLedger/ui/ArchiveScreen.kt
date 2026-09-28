@@ -41,7 +41,7 @@ fun ArchiveScreen(
                     Column {
                         Text("မှတ်တမ်းဟောင်းများ", fontWeight = FontWeight.Bold, fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onBackground)
-                        Text("${batches.size} batch archived", fontSize = 11.sp,
+                        Text("${batches.size} ပွဲစဉ် မှတ်တမ်းတင်ထားသည်", fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -67,9 +67,9 @@ fun ArchiveScreen(
                     Icon(Icons.Default.Inbox, contentDescription = null,
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    Text("Archive မရှိသေးပါ", fontSize = 16.sp,
+                    Text("မှတ်တမ်းဟောင်း မရှိသေးပါ", fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                    Text("Reset လုပ်သောအခါ ဤနေရာတွင် သိမ်းမည်", fontSize = 12.sp,
+                    Text("အသစ်ပြန်စသောအခါ ဤနေရာတွင် သိမ်းဆည်းပါမည်", fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                 }
             }

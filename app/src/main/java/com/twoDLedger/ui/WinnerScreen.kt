@@ -91,16 +91,18 @@ fun WinnerScreen(
     var isDeclared by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
     var showRealtimeLiveDialog by remember { mutableStateOf(false) }
+    var showDailyHoldDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
     var results by remember { mutableStateOf<List<WinnerResult>>(emptyList()) }
     var overflowResults by remember { mutableStateOf<List<OverflowWinResult>>(emptyList()) }
 
     BackHandler {
-        if (showClearDialog) {
-            showClearDialog = false
-        } else {
-            onNavigateBack()
+        when {
+            showClearDialog -> showClearDialog = false
+            showDailyHoldDialog -> showDailyHoldDialog = false
+            showRealtimeLiveDialog -> showRealtimeLiveDialog = false
+            else -> onNavigateBack()
         }
     }
 
@@ -426,6 +428,34 @@ fun WinnerScreen(
                             color = TextMuted,
                             lineHeight = 14.sp
                         )
+
+                        val currentSessionWon = if (selectedSession == "12:00 PM") win1200 else win1630
+                        if (currentSessionWon.isBlank() || currentSessionWon == "--") {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFFEF3C7).copy(alpha = 0.7f),
+                                border = BorderStroke(0.5.dp, Color(0xFFF59E0B)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.HourglassEmpty, contentDescription = null, tint = Color(0xFFB45309), modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "${if (selectedSession == "12:00 PM") "မနက်ပိုင်း (၁၂:၀၀)" else "ညနေပိုင်း (၄:၃၀)"} ထွက်ဂဏန်း မထွက်သေးပါ၊ စောင့်ဆိုင်းနေပါသည်",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFB45309),
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -548,12 +578,24 @@ fun WinnerScreen(
                             }
 
                             if (isDeclared) {
+                                Button(
+                                    onClick = { showDailyHoldDialog = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF97316)),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.Assessment, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("ရက်ချုပ်", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1, softWrap = false)
+                                }
+
                                 OutlinedButton(
                                     onClick = { showClearDialog = true },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(0.85f),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF5350)),
                                     border = BorderStroke(1.dp, Color(0xFFEF5350)),
-                                    shape = RoundedCornerShape(10.dp)
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -845,6 +887,18 @@ fun WinnerScreen(
                 Toast.makeText(context, "ပေါက်ဂဏန်း ($num) ထည့်သွင်းပြီးပါပြီ။ တွက်ချက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_SHORT).show()
             },
             onDismiss = { showRealtimeLiveDialog = false }
+        )
+    }
+
+    if (showDailyHoldDialog) {
+        TwoDDailyHoldDialog(
+            allVouchersWithBets = allVWB,
+            allExportRecords = allExportRecords,
+            brakeLimit = viewModel.brakeLimit.collectAsStateWithLifecycle().value,
+            win1200 = win1200,
+            win1630 = win1630,
+            currentBatch = targetBatchInt,
+            onDismiss = { showDailyHoldDialog = false }
         )
     }
 }

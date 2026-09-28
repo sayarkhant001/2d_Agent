@@ -52,7 +52,7 @@ fun WinningHistoryScreen(
                             fontSize = 18.sp
                         )
                         Text(
-                            text = "Past 30 Days 2D Winning History",
+                            text = "လွန်ခဲ့သော ရက် ၃၀ အတွင်း 2D ထွက်ဂဏန်း မှတ်တမ်း",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

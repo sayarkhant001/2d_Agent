@@ -219,8 +219,8 @@ class LicenseManager(private val context: Context) {
 
         val badgeText = when (planType) {
             LicensePlanType.TRIAL -> "အစမ်းသုံး"
-            LicensePlanType.LIFETIME -> "Pro Lifetime"
-            LicensePlanType.ONE_YEAR -> "Pro 1 Year"
+            LicensePlanType.LIFETIME -> "တစ်သက်တာ"
+            LicensePlanType.ONE_YEAR -> "၁ နှစ်စာ"
         }
 
         if (planType == LicensePlanType.LIFETIME) {

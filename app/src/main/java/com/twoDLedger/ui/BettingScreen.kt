@@ -528,7 +528,7 @@ fun BettingScreen(
                             color = Color(0xFFB91C1C)
                         )
                         Text(
-                            text = "Winning number is declared. You cannot place bets in this batch.",
+                            text = "ပေါက်ဂဏန်း ထွက်ရှိပြီးဖြစ်၍ ထိုးကြေးထည့်သွင်းခြင်း ပိတ်ထားပါသည်",
                             fontSize = 11.sp,
                             color = Color(0xFF991B1B)
                         )
@@ -1305,7 +1305,7 @@ fun BettingScreen(
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 TactileKeypadButton(
                                     text = "ရှင်း",
-                                    subtitle = "Clear",
+                                    subtitle = "ဖျက်မည်",
                                     bgColor = Color(0xFFD97706),
                                     contentColor = Color.White,
                                     borderColor = Color(0xFF92400E),

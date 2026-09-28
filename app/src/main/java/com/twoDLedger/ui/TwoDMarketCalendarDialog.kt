@@ -200,7 +200,7 @@ fun TwoDMarketCalendarDialog(
                                     color = if (todayOverview.isOpen) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
                                 ) {
                                     Text(
-                                        text = if (todayOverview.isOpen) "OPEN" else "CLOSED",
+                                        text = if (todayOverview.isOpen) "ဖွင့်သည်" else "ပိတ်သည်",
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Black,
                                         color = if (todayOverview.isOpen) Color(0xFF166534) else Color(0xFF991B1B),

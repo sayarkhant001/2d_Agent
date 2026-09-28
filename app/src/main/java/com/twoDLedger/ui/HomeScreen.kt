@@ -1,6 +1,9 @@
 package com.twoDLedger.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -98,6 +101,7 @@ fun HomeScreen(
     val licenseManager = remember { LicenseManager(context) }
     var showLicenseDetailsDialog by remember { mutableStateOf(false) }
     var licenseDetails by remember { mutableStateOf(licenseManager.getLicenseDetails()) }
+    var isBatchSummaryExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         licenseManager.syncServerTime()
@@ -455,7 +459,7 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // ── 3. Upper Part Details (Stats Grid) - Displayed by Default in Modified Order ──
+                // ── 3. Upper Part Details (Stats Grid) - Tap to Show / Expandable ──
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -470,110 +474,150 @@ fun HomeScreen(
                             .padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Section Header: Batch Indicator & Declaration Tag
+                        // Section Header: Batch Indicator & Declaration Tag (Tap to expand/collapse)
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { isBatchSummaryExpanded = !isBatchSummaryExpanded }
+                                .padding(vertical = 2.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "📊 ပွဲစဉ် #${currentBatch} ရှင်းတမ်း အနှစ်ချုပ်",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = CobaltPrimary
-                            )
-                            if (stats.isDeclared) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFFEE2E2),
-                                    border = BorderStroke(1.dp, Color(0xFFFCA5A5))
-                                ) {
-                                    Text(
-                                        text = "🏆 ပေါက်: ${stats.winningNumber}",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = Color(0xFFB91C1C),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "📊 ပွဲစဉ် #${currentBatch} ရှင်းတမ်း အနှစ်ချုပ်",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = CobaltPrimary
+                                )
+                                Icon(
+                                    if (isBatchSummaryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = null,
+                                    tint = CobaltPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (stats.isDeclared) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFFEE2E2),
+                                        border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                    ) {
+                                        Text(
+                                            text = "🏆 ပေါက်: ${stats.winningNumber}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = Color(0xFFB91C1C),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                } else {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFDCFCE7),
+                                        border = BorderStroke(1.dp, Color(0xFF86EFAC))
+                                    ) {
+                                        Text(
+                                            text = "🟢 ဖွင့်လှစ်ဆဲ",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF15803D),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
                                 }
-                            } else {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFDCFCE7),
-                                    border = BorderStroke(1.dp, Color(0xFF86EFAC))
-                                ) {
+                                if (!isBatchSummaryExpanded) {
                                     Text(
-                                        text = "🟢 ဖွင့်လှစ်ဆဲ",
-                                        fontSize = 11.sp,
+                                        text = "ကြည့်ရန် နှိပ်ပါ",
+                                        fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF15803D),
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        color = CobaltPrimary
                                     )
                                 }
                             }
                         }
 
-                        // Row 1: The Core Figures - Total Sales & Net Balance
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        // Collapsible Stats Grid Content
+                        AnimatedVisibility(
+                            visible = isBatchSummaryExpanded,
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
                         ) {
-                            BatchStatItem(
-                                modifier = Modifier.weight(1f),
-                                label = "အရောင်းကြေး",
-                                value = "%,d ကျပ်".format(stats.totalSales),
-                                icon = Icons.Default.AccountBalanceWallet,
-                                accentColor = CobaltPrimary
-                            )
-                            BatchStatItem(
-                                modifier = Modifier.weight(1f),
-                                label = "ကျန်ရှိငွေ",
-                                value = "%,d ကျပ်".format(stats.netBalance),
-                                icon = Icons.Default.AccountBalance,
-                                accentColor = Color(0xFF059669)
-                            )
-                        }
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Row 1: The Core Figures - Total Sales & Net Balance
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    BatchStatItem(
+                                        modifier = Modifier.weight(1f),
+                                        label = "အရောင်းကြေး",
+                                        value = "%,d ကျပ်".format(stats.totalSales),
+                                        icon = Icons.Default.AccountBalanceWallet,
+                                        accentColor = CobaltPrimary
+                                    )
+                                    BatchStatItem(
+                                        modifier = Modifier.weight(1f),
+                                        label = "ကျန်ရှိငွေ",
+                                        value = "%,d ကျပ်".format(stats.netBalance),
+                                        icon = Icons.Default.AccountBalance,
+                                        accentColor = Color(0xFF059669)
+                                    )
+                                }
 
-                        // Row 2: Deductions & Outflow - Commission & Export / Winning Payout
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BatchStatItem(
-                                modifier = Modifier.weight(1f),
-                                label = "ကော်မရှင်ခ",
-                                value = "%,d ကျပ်".format(stats.commissionAmount),
-                                icon = Icons.Default.Percent,
-                                accentColor = Color(0xFFD97706)
-                            )
-                            BatchStatItem(
-                                modifier = Modifier.weight(1f),
-                                label = if (stats.isDeclared) "ပေါက်သီး လျော်ငွေ" else "တင်ကွက်ငွေ",
-                                value = "%,d ကျပ်".format(if (stats.isDeclared) stats.winningPayout else stats.exportedAmount.toLong()),
-                                icon = if (stats.isDeclared) Icons.Default.EmojiEvents else Icons.Default.Payment,
-                                accentColor = if (stats.isDeclared) Color(0xFFDC2626) else Color(0xFF7C3AED)
-                            )
-                        }
+                                // Row 2: Deductions & Outflow - Commission & Export / Winning Payout
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    BatchStatItem(
+                                        modifier = Modifier.weight(1f),
+                                        label = "ကော်မရှင်ခ",
+                                        value = "%,d ကျပ်".format(stats.commissionAmount),
+                                        icon = Icons.Default.Percent,
+                                        accentColor = Color(0xFFD97706)
+                                    )
+                                    BatchStatItem(
+                                        modifier = Modifier.weight(1f),
+                                        label = if (stats.isDeclared) "ပေါက်သီး လျော်ငွေ" else "တင်ကွက်ငွေ",
+                                        value = "%,d ကျပ်".format(if (stats.isDeclared) stats.winningPayout else stats.exportedAmount.toLong()),
+                                        icon = if (stats.isDeclared) Icons.Default.EmojiEvents else Icons.Default.Payment,
+                                        accentColor = if (stats.isDeclared) Color(0xFFDC2626) else Color(0xFF7C3AED)
+                                    )
+                                }
 
-                        // Row 3: Operational Counts - Vouchers & Bettors
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BatchStatItem(
-                                modifier = Modifier.weight(1f),
-                                label = "ဘောင်ချာများ (အားလုံး)",
-                                value = "%,d စောင်".format(stats.voucherCount),
-                                icon = Icons.Default.Receipt,
-                                accentColor = Color(0xFF0891B2)
-                            )
-                            BatchStatItem(
-                                modifier = Modifier.weight(1f),
-                                label = "ထိုးသား ဦးရေ",
-                                value = "%,d ဦး".format(stats.customerCount),
-                                icon = Icons.Default.People,
-                                accentColor = Color(0xFF4F46E5)
-                            )
+                                // Row 3: Operational Counts - Vouchers & Bettors
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    BatchStatItem(
+                                        modifier = Modifier.weight(1f),
+                                        label = "ဘောင်ချာများ (အားလုံး)",
+                                        value = "%,d စောင်".format(stats.voucherCount),
+                                        icon = Icons.Default.Receipt,
+                                        accentColor = Color(0xFF0891B2)
+                                    )
+                                    BatchStatItem(
+                                        modifier = Modifier.weight(1f),
+                                        label = "ထိုးသား ဦးရေ",
+                                        value = "%,d ဦး".format(stats.customerCount),
+                                        icon = Icons.Default.People,
+                                        accentColor = Color(0xFF4F46E5)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

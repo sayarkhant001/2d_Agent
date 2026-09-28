@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessaging
 
@@ -44,8 +45,8 @@ fun NotificationPermissionHandler() {
     if (showRationale) {
         AlertDialog(
             onDismissRequest = { showRationale = false },
-            title = { Text("Enable Notifications") },
-            text = { Text("Please enable notifications so we can instantly alert you when the Thai 2D winning numbers are drawn.") },
+            title = { Text("အသိပေးချက် ခွင့်ပြုပါ", fontWeight = FontWeight.Bold) },
+            text = { Text("ထိုင်း 2D ထွက်ဂဏန်းများ ထွက်ရှိချိန်တွင် ချက်ချင်းသိရှိနိုင်ရန် အသိပေးချက် (Notification) ကို ခွင့်ပြုပေးပါ။") },
             confirmButton = {
                 Button(onClick = {
                     showRationale = false
@@ -53,12 +54,12 @@ fun NotificationPermissionHandler() {
                         permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }) {
-                    Text("Allow")
+                    Text("ခွင့်ပြုမည်")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRationale = false }) {
-                    Text("Maybe Later")
+                    Text("နောက်မှ")
                 }
             }
         )

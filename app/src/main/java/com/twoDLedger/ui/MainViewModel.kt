@@ -411,8 +411,8 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
 
     fun loadWinningNumber() {
         val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-        val saved1200 = prefs.getString("winning1200_$today", "") ?: prefs.getString("winning1200", "") ?: ""
-        val saved1630 = prefs.getString("winning1630_$today", "") ?: prefs.getString("winning1630", "") ?: ""
+        val saved1200 = prefs.getString("winning1200_$today", "") ?: ""
+        val saved1630 = prefs.getString("winning1630_$today", "") ?: ""
         if (saved1200.isNotBlank() && winningNumber1200.value.isBlank()) winningNumber1200.value = saved1200
         if (saved1630.isNotBlank() && winningNumber1630.value.isBlank()) winningNumber1630.value = saved1630
 

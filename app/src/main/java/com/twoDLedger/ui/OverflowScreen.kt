@@ -524,6 +524,23 @@ fun OverflowScreen(
         }
     }
 
+    // ── Daily Hold Settlement Dialog (ရက်ချုပ်) ─────────────────────────────
+    if (showDailyHoldDialog) {
+        val allVWB by viewModel.vouchersWithBets.collectAsStateWithLifecycle()
+        val allExp by viewModel.allExportRecords.collectAsStateWithLifecycle()
+        val win1200 by viewModel.winningNumber1200.collectAsStateWithLifecycle()
+        val win1630 by viewModel.winningNumber1630.collectAsStateWithLifecycle()
+        TwoDDailyHoldDialog(
+            allVouchersWithBets = allVWB,
+            allExportRecords = allExp,
+            brakeLimit = brakeLimit,
+            win1200 = win1200,
+            win1630 = win1630,
+            currentBatch = currentBatch,
+            onDismiss = { showDailyHoldDialog = false }
+        )
+    }
+
     // ── Overflow Voucher Snapshot Dialog with Per-Dine Serial Copy ───────────
     val snapshot = overflowSnapshot
     if (snapshot != null) {
