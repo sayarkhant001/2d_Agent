@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.twoDLedger.ui.theme.*
 import com.twoDLedger.utils.GitHubUpdater
 import kotlinx.coroutines.launch
 
@@ -114,6 +115,106 @@ fun SettingsScreen(
                     SettingsRow(Icons.Default.History,  Color(0xFF4ECDC4), "မှတ်တမ်းများ",         "သိမ်းဆည်းထားသော မှတ်တမ်းဟောင်းများ", onClick = onNavigateToArchive)
                     SettingsDivider()
                     SettingsRow(Icons.Default.Star,     Color(0xFFFFD93D), "ထွက်ဂဏန်းများ",        "ပေါက်ဂဏန်း စာရင်း",        onClick = onNavigateToWinner)
+                }
+            }
+
+            item { SettingsSectionHeader("စာလုံး အရွယ်အစား (အမြင်အာရုံ အထောက်အကူ)", Icons.Default.FormatSize) }
+            item {
+                val fontScaleIndex by viewModel.fontScaleIndex.collectAsStateWithLifecycle()
+                val scaleLabels = listOf("အသေးဆုံး", "ပုံမှန်", "အကြီး", "အကြီးဆုံး")
+                SettingsCard {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(CobaltPrimary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.FormatSize, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("စာလုံး အရွယ်အစား ချိန်ညှိရန်", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = onSurface)
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = CobaltPrimary.copy(alpha = 0.12f)
+                                    ) {
+                                        Text(
+                                            scaleLabels.getOrElse(fontScaleIndex) { "အသေးဆုံး" },
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = CobaltPrimary,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text("ဖုန်းစနစ် ဆက်တင်ထက် ဤဆက်တင်က တိုက်ရိုက် ဦးစားပေး အသက်ဝင်ပါမည် (မူလ: အသေးဆုံး)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+
+                        Spacer(Modifier.height(14.dp))
+
+                        // Line with Circle Slider
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("A", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Slider(
+                                value = fontScaleIndex.toFloat(),
+                                onValueChange = { viewModel.setFontScaleIndex(kotlin.math.round(it).toInt()) },
+                                valueRange = 0f..3f,
+                                steps = 2,
+                                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = CobaltPrimary,
+                                    activeTrackColor = CobaltPrimary,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            )
+                            Text("A", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = CobaltPrimary)
+                        }
+
+                        // Steps label row
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            scaleLabels.forEachIndexed { idx, label ->
+                                Text(
+                                    text = label,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (idx == fontScaleIndex) FontWeight.ExtraBold else FontWeight.Normal,
+                                    color = if (idx == fontScaleIndex) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Live Preview Box
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text("နမူနာ စာသား ကြည့်ရှုချက်:", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    "2D ဒိုင်ချုပ် စာရင်းစနစ် (ပေါက်ဂဏန်း ၇၇ • အရောင်းကြေး ၁၅,၁၁၀,၀၀၀ ကျပ်)",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = onSurface
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -444,9 +545,10 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                             }
                         },
                         shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F766E)),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
                     ) {
-                        Text("ထည့်", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("ထည့်", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
 
@@ -472,33 +574,34 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                                         Text(
                                             banned.number,
                                             fontSize = 17.sp,
-                                            fontWeight = FontWeight.Bold,
+                                            fontWeight = FontWeight.Black,
+                                            color = Color(0xFF0F766E),
                                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                                         )
                                         if (banned.amountLimit <= 0) {
                                             Surface(
                                                 shape = RoundedCornerShape(6.dp),
-                                                color = Color(0xFFFF5252).copy(alpha = 0.15f)
+                                                color = Color(0xFFFFE4E6)
                                             ) {
                                                 Text(
                                                     "လုံးဝပိတ်",
-                                                    fontSize = 10.sp,
+                                                    fontSize = 10.5.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFFF5252),
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    color = Color(0xFFE11D48),
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                                 )
                                             }
                                         } else {
                                             Surface(
                                                 shape = RoundedCornerShape(6.dp),
-                                                color = Color(0xFFFFB300).copy(alpha = 0.18f)
+                                                color = Color(0xFFFEF3C7)
                                             ) {
                                                 Text(
-                                                    "ကန့်သတ်: %,d ကျပ်".format(banned.amountLimit),
-                                                    fontSize = 10.sp,
+                                                    "≤ %,d ကျပ်".format(banned.amountLimit),
+                                                    fontSize = 10.5.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFFFB300),
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    color = Color(0xFFB45309),
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                                                 )
                                             }
                                         }
@@ -523,13 +626,13 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
                                         },
                                         modifier = Modifier.size(32.dp)
                                     ) {
-                                        Icon(Icons.Default.Edit, "Edit Limit", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Icon(Icons.Default.Edit, "Edit Limit", modifier = Modifier.size(17.dp), tint = Color(0xFF0F766E))
                                     }
                                     IconButton(
                                         onClick = { viewModel.deleteBannedNumber(banned) },
                                         modifier = Modifier.size(32.dp)
                                     ) {
-                                        Icon(Icons.Default.Delete, "Delete", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                                        Icon(Icons.Default.Delete, "Delete", modifier = Modifier.size(17.dp), tint = Color(0xFFE11D48))
                                     }
                                 }
                             }
@@ -540,7 +643,9 @@ fun BannedNumbersDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("ကောင်းပြီ", fontWeight = FontWeight.Bold) }
+            TextButton(onClick = onDismiss) {
+                Text("အတည်ပြုသည်", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = CobaltPrimary)
+            }
         }
     )
 

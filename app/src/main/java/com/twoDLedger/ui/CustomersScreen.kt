@@ -157,7 +157,7 @@ fun CustomersScreen(
                                     modifier = Modifier.padding(end = 14.dp)
                                 ) {
                                     Text(
-                                        if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
+                                        if (currentSession == "12:00 PM") "၁၂:၀၀ PM" else "၄:၃၀ PM",
                                         color = CobaltPrimary,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,

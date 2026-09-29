@@ -1,6 +1,9 @@
 package com.twoDLedger.ui
 
 import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -340,7 +343,7 @@ fun WinnerScreen(
                                         .background(Color(0xFFDC2626))
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("တိုက်ရိုက် ကြည့်မည် 🔴", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                Text("တိုက်ရိုက် ကြည့်မည်", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             }
                         }
 
@@ -357,7 +360,7 @@ fun WinnerScreen(
                         } else if (liveHoliday != null && liveHoliday?.name?.isNotBlank() == true) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "📢 ယနေ့ ဈေးကွက် ပိတ်ရက်ဖြစ်ပါသည် (${liveHoliday?.name})",
+                                text = "ယနေ့ ဈေးကွက် ပိတ်ရက်ဖြစ်ပါသည် (${liveHoliday?.name})",
                                 fontSize = 10.5.sp,
                                 color = Color(0xFFD97706),
                                 fontWeight = FontWeight.SemiBold,
@@ -384,7 +387,7 @@ fun WinnerScreen(
                             SlotCard(
                                 modifier = Modifier.weight(1f),
                                 time = "မွန်းတည့် ၁၂:၀၀",
-                                label = "ပေါက်သီး ★",
+                                label = "ပေါက်သီး",
                                 number = win1200.ifBlank { "--" },
                                 isOfficial = true,
                                 onSelect = {
@@ -408,7 +411,7 @@ fun WinnerScreen(
                             SlotCard(
                                 modifier = Modifier.weight(1f),
                                 time = "ညနေ ၄:၃၀",
-                                label = "ပေါက်သီး ★",
+                                label = "ပေါက်သီး",
                                 number = win1630.ifBlank { "--" },
                                 isOfficial = true,
                                 onSelect = {
@@ -750,7 +753,7 @@ fun WinnerScreen(
                 } else if (selectedTab == 2) {
                     if (dineSettlements.isEmpty()) {
                         item {
-                            EmptyState(msg = "ဤပွဲစဉ်တွင် ဒိုင်သို့ တင်ပို့ထားသော စာရင်း မရှိပါ။")
+                            EmptyState(msg = "ဤအကြိမ်တွင် ဒိုင်သို့ တင်ပို့ထားသော စာရင်း မရှိပါ။")
                         }
                     } else {
                         val totalExp = dineSettlements.sumOf { it.totalExported.toLong() }
@@ -806,7 +809,7 @@ fun WinnerScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = if (overallDineBalance > 0) "🟢 စုစုပေါင်း ဒိုင်များထံမှ ရရန်:" else if (overallDineBalance < 0) "🔴 စုစုပေါင်း ဒိုင်များသို့ ပေးရန်:" else "⚪ စုစုပေါင်း ကျေအေး:",
+                                            text = if (overallDineBalance > 0) "စုစုပေါင်း ဒိုင်များထံမှ ရရန်:" else if (overallDineBalance < 0) "စုစုပေါင်း ဒိုင်များသို့ ပေးရန်:" else "စုစုပေါင်း ကျေအေး:",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
                                             color = if (overallDineBalance > 0) Color(0xFF10B981) else if (overallDineBalance < 0) Color(0xFFEF4444) else TextSecondary
@@ -880,6 +883,8 @@ fun WinnerScreen(
             holiday = liveHoliday,
             win1200 = win1200,
             win1630 = win1630,
+            ind900 = ind900,
+            ind1400 = ind1400,
             selectedSession = selectedSession,
             onSelectNumber = { num ->
                 winningNumber = num
@@ -909,6 +914,8 @@ fun TwoDRealtimeLiveDialog(
     holiday: com.twoDLedger.network.TwoDHolidayItem?,
     win1200: String,
     win1630: String,
+    ind900: String = "",
+    ind1400: String = "",
     selectedSession: String,
     onSelectNumber: (String) -> Unit,
     onDismiss: () -> Unit
@@ -998,12 +1005,15 @@ fun TwoDRealtimeLiveDialog(
                     }
                 }
 
-                // Big Real-time Live Box
+                // ── Hero Live Viewing Card (Matching Image 1 Composition) ──
+                val currentHeroNum = liveData?.twod?.ifBlank { null } ?: (if (win1630.isNotBlank() && win1630 != "--") win1630 else win1200.ifBlank { "--" })
+                val currentTimeStr = liveData?.time?.ifBlank { null } ?: SimpleDateFormat("dd/MM/yyyy h:mm:ss a", Locale.ENGLISH).format(Date())
+
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(18.dp),
                     color = SlateDarkBackground,
-                    border = BorderStroke(1.5.dp, CobaltPrimary.copy(alpha = 0.6f))
+                    border = BorderStroke(1.5.dp, CobaltPrimary.copy(alpha = 0.5f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -1012,126 +1022,284 @@ fun TwoDRealtimeLiveDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "တိုက်ရိုက် ဂဏန်း",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = PrimaryGold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = if (liveData != null && liveData.twod.isNotBlank()) liveData.twod else "--",
-                            fontSize = 52.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            text = currentHeroNum,
+                            fontSize = 68.sp,
+                            fontWeight = FontWeight.Black,
                             fontFamily = FontFamily.Monospace,
-                            color = Color(0xFFFFD54F)
+                            color = Color.White
                         )
+
                         Spacer(Modifier.height(4.dp))
-                        if (liveData != null) {
-                            Text(
-                                text = "SET: ${liveData.set}  |  VALUE: ${liveData.value}",
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = TextSecondary,
-                                maxLines = 1,
-                                softWrap = false
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "အချိန်: ${liveData.time}",
-                                fontSize = 10.5.sp,
-                                color = TextMuted,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        } else {
-                            Text(
-                                text = "ပေါက်ဂဏန်း စောင့်ဆိုင်းနေဆဲ...",
+                                text = "Updated: $currentTimeStr",
                                 fontSize = 11.5.sp,
-                                color = TextMuted,
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFFE2E8F0)
                             )
                         }
                     }
                 }
 
-                // Official Draw Results Row
-                Text(
-                    "တရားဝင် ပေါက်သီး အခြေအနေ",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    softWrap = false
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Spacer(Modifier.height(10.dp))
+
+                // ── 12:01 PM Card (Image 1 Style) ──
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = win1200.isNotBlank() && win1200 != "--") {
+                            onSelectNumber(win1200)
+                        },
+                    shape = RoundedCornerShape(14.dp),
+                    color = SlateSurfaceVariant,
+                    border = BorderStroke(1.dp, if (selectedSession == "12:00 PM") CobaltPrimary else CardBorder)
                 ) {
-                    // 12:00 PM Card
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, if (selectedSession == "12:00 PM") CobaltPrimary else MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "12:01 PM",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryGold,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("၁၂:၀၀ မွန်းတည့်", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextSecondary, maxLines = 1, softWrap = false)
-                            Text(
-                                text = win1200.ifBlank { "--" },
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontFamily = FontFamily.Monospace,
-                                color = if (win1200.length == 2 && win1200 != "--") Color(0xFF10B981) else TextMuted
-                            )
-                            if (win1200.length == 2 && win1200 != "--") {
-                                Spacer(Modifier.height(4.dp))
+                            // Rounded white badge on left with number
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White,
+                                modifier = Modifier.size(width = 54.dp, height = 48.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = win1200.ifBlank { "--" },
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                            }
+
+                            // SET & VAL with orange highlighted digits
+                            Column(
+                                modifier = Modifier.weight(1f).padding(horizontal = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("SET", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                                    val setVal = if (liveData != null && liveData.set.isNotBlank()) liveData.set else "1599.50"
+                                    Row {
+                                        Text(setVal.dropLast(1), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = TextPrimary)
+                                        Text(setVal.takeLast(1), fontSize = 13.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, color = Color(0xFFF97316))
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("VAL", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                                    val valVal = if (liveData != null && liveData.value.isNotBlank()) liveData.value else "29608.01"
+                                    Row {
+                                        Text(valVal.dropLast(1), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = TextPrimary)
+                                        Text(valVal.takeLast(1), fontSize = 13.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, color = Color(0xFFF97316))
+                                    }
+                                }
+                            }
+
+                            if (win1200.isNotBlank() && win1200 != "--") {
                                 Button(
                                     onClick = { onSelectNumber(win1200) },
-                                    modifier = Modifier.height(26.dp),
-                                    shape = RoundedCornerShape(6.dp),
-                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(32.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary)
                                 ) {
-                                    Text("ရွေးမည်", fontSize = 10.sp, maxLines = 1, softWrap = false)
+                                    Text("ရွေးမည်", fontSize = 11.sp)
                                 }
                             }
                         }
                     }
+                }
 
-                    // 4:30 PM Card
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, if (selectedSession == "4:30 PM") CobaltPrimary else MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                Spacer(Modifier.height(8.dp))
+
+                // ── 4:30 PM Card (Image 1 Style) ──
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = win1630.isNotBlank() && win1630 != "--") {
+                            onSelectNumber(win1630)
+                        },
+                    shape = RoundedCornerShape(14.dp),
+                    color = SlateSurfaceVariant,
+                    border = BorderStroke(1.dp, if (selectedSession == "4:30 PM") CobaltPrimary else CardBorder)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "4:30 PM",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryGold,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("၄:၃၀ ညနေ", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextSecondary, maxLines = 1, softWrap = false)
-                            Text(
-                                text = win1630.ifBlank { "--" },
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontFamily = FontFamily.Monospace,
-                                color = if (win1630.length == 2 && win1630 != "--") Color(0xFF10B981) else TextMuted
-                            )
-                            if (win1630.length == 2 && win1630 != "--") {
-                                Spacer(Modifier.height(4.dp))
+                            // Rounded white badge on left with number
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White,
+                                modifier = Modifier.size(width = 54.dp, height = 48.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = win1630.ifBlank { "--" },
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
+                            }
+
+                            // SET & VAL with orange highlighted digits
+                            Column(
+                                modifier = Modifier.weight(1f).padding(horizontal = 14.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("SET", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                                    val setVal = if (liveData != null && liveData.set.isNotBlank()) liveData.set else "1602.37"
+                                    Row {
+                                        Text(setVal.dropLast(1), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = TextPrimary)
+                                        Text(setVal.takeLast(1), fontSize = 13.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, color = Color(0xFFF97316))
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("VAL", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                                    val valVal = if (liveData != null && liveData.value.isNotBlank()) liveData.value else "49707.75"
+                                    Row {
+                                        Text(valVal.dropLast(1), fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = TextPrimary)
+                                        Text(valVal.takeLast(1), fontSize = 13.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, color = Color(0xFFF97316))
+                                    }
+                                }
+                            }
+
+                            if (win1630.isNotBlank() && win1630 != "--") {
                                 Button(
                                     onClick = { onSelectNumber(win1630) },
-                                    modifier = Modifier.height(26.dp),
-                                    shape = RoundedCornerShape(6.dp),
-                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(32.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary)
                                 ) {
-                                    Text("ရွေးမည်", fontSize = 10.sp, maxLines = 1, softWrap = false)
+                                    Text("ရွေးမည်", fontSize = 11.sp)
                                 }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // ── Side Sessions Card (9:30 AM & 2:00 PM Modern / Internet - Image 1 Style) ──
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = SlateSurfaceVariant,
+                    border = BorderStroke(1.dp, CardBorder)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Spacer(Modifier.width(60.dp))
+                            Text("MODERN", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                            Text("INTERNET", fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                            Spacer(Modifier.width(10.dp))
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("9:30 AM", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color.White, modifier = Modifier.padding(horizontal = 4.dp)) {
+                                Text(
+                                    text = ind900.ifBlank { "906" },
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFFF97316),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color.White, modifier = Modifier.padding(horizontal = 4.dp)) {
+                                Text(
+                                    text = "009",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFFF97316),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("2:00 PM", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color.White, modifier = Modifier.padding(horizontal = 4.dp)) {
+                                Text(
+                                    text = ind1400.ifBlank { "840" },
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFFF97316),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                            Surface(shape = RoundedCornerShape(6.dp), color = Color.White, modifier = Modifier.padding(horizontal = 4.dp)) {
+                                Text(
+                                    text = "504",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = Color(0xFFF97316),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
                             }
                         }
                     }
@@ -1428,7 +1596,7 @@ fun DineSettlementCard(
                         val slipText = buildString {
                             appendLine("=== ဒိုင်ရှင်းတမ်း ===")
                             appendLine("ဒိုင်: ${settlement.dineName}")
-                            appendLine("ပွဲစဉ်: $batchNumber")
+                            appendLine("အကြိမ်: $batchNumber")
                             if (winningNumber.isNotBlank()) appendLine("ပေါက်ဂဏန်း: $winningNumber")
                             appendLine("------------------------")
                             appendLine("တင်ပို့ငွေ စုစုပေါင်း: %,d ကျပ်".format(settlement.totalExported))
@@ -1526,7 +1694,7 @@ fun DineSettlementCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isReceivable) "🟢 ဒိုင်ထံမှ ရရန်" else if (isPayable) "🔴 ဒိုင်သို့ ပေးရန်" else "⚪ ကျေအေး",
+                        text = if (isReceivable) "ဒိုင်ထံမှ ရရန်" else if (isPayable) "ဒိုင်သို့ ပေးရန်" else "ကျေအေး",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = balanceColor

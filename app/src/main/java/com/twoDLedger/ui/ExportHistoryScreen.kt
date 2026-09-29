@@ -144,7 +144,7 @@ fun ExportHistoryScreen(
                     FilterChip(
                         selected = selectedSessionFilter == "12:00 PM",
                         onClick = { selectedSessionFilter = "12:00 PM" },
-                        label = { Text("☀️ ၁၂:၀၀ ($count)") }
+                        label = { Text("၁၂:၀၀ PM ($count)") }
                     )
                 }
                 item {
@@ -152,7 +152,7 @@ fun ExportHistoryScreen(
                     FilterChip(
                         selected = selectedSessionFilter == "4:30 PM",
                         onClick = { selectedSessionFilter = "4:30 PM" },
-                        label = { Text("🌙 ၄:၃၀ ($count)") }
+                        label = { Text("၄:၃၀ PM ($count)") }
                     )
                 }
             }

@@ -32,7 +32,9 @@ data class BatchFinancialSummary(
     val customerCount: Int,
     val winningPayout: Long,
     val isDeclared: Boolean,
-    val winningNumber: String
+    val winningNumber: String,
+    val commissionCustomerCount: Int = 0,
+    val directBettorCount: Int = 0
 )
 
 data class DineSettlement(
@@ -92,6 +94,15 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
     val liveHoliday = MutableStateFlow<com.twoDLedger.network.TwoDHolidayItem?>(null)
     val isFetchingLive = MutableStateFlow(false)
     val isFetchingHistory = MutableStateFlow(false)
+    val fontScales = listOf(0.85f, 1.0f, 1.15f, 1.30f)
+    val fontScaleIndex = MutableStateFlow(prefs.getInt("font_scale_index", 0))
+
+    fun setFontScaleIndex(index: Int) {
+        val clamped = index.coerceIn(0, fontScales.lastIndex)
+        fontScaleIndex.value = clamped
+        prefs.edit().putInt("font_scale_index", clamped).apply()
+    }
+
     val winningHistory = repository.winningHistory
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -373,7 +384,10 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
 
         val totalSales = vouchers.sumOf { it.voucher.totalAmount }
         val voucherCount = vouchers.size
-        val customerCount = vouchers.map { it.voucher.customerId }.distinct().size
+        val activeCustomerIds = vouchers.map { it.voucher.customerId }.distinct()
+        val customerCount = activeCustomerIds.size
+        val commissionCustomerCount = activeCustomerIds.count { (custMap[it]?.commissionRate ?: 0.0) > 0.0 }
+        val directBettorCount = activeCustomerIds.count { (custMap[it]?.commissionRate ?: 0.0) <= 0.0 }
 
         val commissionAmount = vouchers.sumOf { vb ->
             val rate = custMap[vb.voucher.customerId]?.commissionRate ?: 0.0
@@ -405,7 +419,9 @@ class MainViewModel(private val repository: LotteryRepository, private val prefs
             customerCount = customerCount,
             winningPayout = winningPayout,
             isDeclared = isDeclared,
-            winningNumber = winNum
+            winningNumber = winNum,
+            commissionCustomerCount = commissionCustomerCount,
+            directBettorCount = directBettorCount
         )
     }
 

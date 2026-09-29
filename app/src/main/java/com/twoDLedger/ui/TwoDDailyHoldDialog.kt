@@ -144,10 +144,10 @@ fun TwoDDailyHoldDialog(
 
     val summarySlipText = buildString {
         appendLine("===== တစ်နေ့တာ သိမ်းငွေ ရက်ချုပ် စာရင်း =====")
-        appendLine("နေ့စွဲ: $todayStr (ပွဲစဉ်: $currentBatch)")
+        appendLine("နေ့စွဲ: $todayStr (အကြိမ်: $currentBatch)")
         appendLine("ဘရိတ်ကန့်သတ်: %,d ကျပ်".format(brakeLimit))
         appendLine("----------------------------------")
-        appendLine("☀️ မနက်ပိုင်း (၁၂:၀၀)")
+        appendLine("မနက်ပိုင်း (၁၂:၀၀)")
         appendLine("  ပေါက်ဂဏန်း: ${morning.winningNumber}")
         appendLine("  ထိုးကြေး စုစုပေါင်း: %,d ကျပ်".format(morning.totalBetPlaced))
         appendLine("  ဒိုင်တင်ငွေ: %,d ကျပ်".format(morning.totalExported))
@@ -159,7 +159,7 @@ fun TwoDDailyHoldDialog(
             appendLine("  အခြေအနေ: ပေါက်ဂဏန်း မထွက်သေးပါ")
         }
         appendLine("----------------------------------")
-        appendLine("🌙 ညနေပိုင်း (၄:၃၀)")
+        appendLine("ညနေပိုင်း (၄:၃၀)")
         appendLine("  ပေါက်ဂဏန်း: ${evening.winningNumber}")
         appendLine("  ထိုးကြေး စုစုပေါင်း: %,d ကျပ်".format(evening.totalBetPlaced))
         appendLine("  ဒိုင်တင်ငွေ: %,d ကျပ်".format(evening.totalExported))
@@ -171,7 +171,7 @@ fun TwoDDailyHoldDialog(
             appendLine("  အခြေအနေ: ပေါက်ဂဏန်း မထွက်သေးပါ")
         }
         appendLine("==================================")
-        appendLine("📊 တစ်နေ့တာ စုစုပေါင်း ရက်ချုပ်")
+        appendLine("တစ်နေ့တာ စုစုပေါင်း ရက်ချုပ်")
         appendLine("  စုစုပေါင်း သိမ်းငွေ: %,d ကျပ်".format(totalHeldDay))
         appendLine("  စုစုပေါင်း လျော်ကြေး: %,d ကျပ်".format(totalPayoutDay))
         appendLine("  တစ်နေ့တာ အသားတင်: %s%,d ကျပ်".format(if (totalNetProfitDay >= 0) "+" else "", totalNetProfitDay))
@@ -213,7 +213,7 @@ fun TwoDDailyHoldDialog(
                             softWrap = false
                         )
                         Text(
-                            text = "$todayStr • ပွဲစဉ်: $currentBatch",
+                            text = "$todayStr • အကြိမ်: $currentBatch",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -226,10 +226,10 @@ fun TwoDDailyHoldDialog(
                 HorizontalDivider(thickness = 0.5.dp)
 
                 // Morning Session Card
-                SessionCard(calc = morning, iconText = "☀️")
+                SessionCard(calc = morning)
 
                 // Evening Session Card
-                SessionCard(calc = evening, iconText = "🌙")
+                SessionCard(calc = evening)
 
                 // Whole Day Grand Summary
                 Surface(
@@ -301,7 +301,7 @@ fun TwoDDailyHoldDialog(
 }
 
 @Composable
-private fun SessionCard(calc: SessionHoldCalc, iconText: String) {
+private fun SessionCard(calc: SessionHoldCalc) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -314,7 +314,6 @@ private fun SessionCard(calc: SessionHoldCalc, iconText: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(iconText, fontSize = 14.sp)
                     Text(calc.sessionName, fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
                 }
                 Surface(

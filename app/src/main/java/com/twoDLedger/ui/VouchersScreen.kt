@@ -301,7 +301,7 @@ fun VouchersScreen(
                         FilterChip(
                             selected = selectedSessionFilter == "12:00 PM",
                             onClick = { selectedSessionFilter = "12:00 PM" },
-                            label = { Text("☀️ နေ့လယ် ၁၂:၀၀", fontSize = 11.5.sp) },
+                            label = { Text("နေ့လယ် ၁၂:၀၀", fontSize = 11.5.sp) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(0xFFFEF3C7),
                                 selectedLabelColor = Color(0xFF92400E)
@@ -310,7 +310,7 @@ fun VouchersScreen(
                         FilterChip(
                             selected = selectedSessionFilter == "4:30 PM",
                             onClick = { selectedSessionFilter = "4:30 PM" },
-                            label = { Text("🌙 ညနေ ၄:၃၀", fontSize = 11.5.sp) },
+                            label = { Text("ညနေ ၄:၃၀", fontSize = 11.5.sp) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Color(0xFFDBEAFE),
                                 selectedLabelColor = Color(0xFF1E40AF)

@@ -415,7 +415,7 @@ fun TwoDMarketCalendarDialog(
                                     color = if (sel.state == DayMarketState.OPEN) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
                                 ) {
                                     Text(
-                                        text = if (sel.state == DayMarketState.OPEN) "🟢 ဖွင့်လှစ်သည်" else "🔴 ပိတ်ရက်",
+                                        text = if (sel.state == DayMarketState.OPEN) "ဖွင့်လှစ်သည်" else "ပိတ်ရက်",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (sel.state == DayMarketState.OPEN) Color(0xFF15803D) else Color(0xFFB91C1C),

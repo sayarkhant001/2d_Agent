@@ -183,11 +183,11 @@ fun HistoryDayCard(record: WinningHistory) {
                     isOfficialWinner = false
                 )
 
-                // 12:00 PM Official Winner 🏆
+                // 12:00 PM Official Winner
                 IndicatorBox(
                     modifier = Modifier.weight(1.2f),
                     title = "12:00 PM",
-                    subtitle = "ပေါက်ဂဏန်း 🏆",
+                    subtitle = "ပေါက်ဂဏန်း",
                     number = record.num1200.ifBlank { "--" },
                     isOfficialWinner = true,
                     setDetail = if (record.set1200.isNotBlank()) "SET: ${record.set1200}" else null
@@ -202,11 +202,11 @@ fun HistoryDayCard(record: WinningHistory) {
                     isOfficialWinner = false
                 )
 
-                // 4:30 PM Official Winner 🏆
+                // 4:30 PM Official Winner
                 IndicatorBox(
                     modifier = Modifier.weight(1.2f),
                     title = "4:30 PM",
-                    subtitle = "ပေါက်ဂဏန်း 🏆",
+                    subtitle = "ပေါက်ဂဏန်း",
                     number = record.num1630.ifBlank { "--" },
                     isOfficialWinner = true,
                     setDetail = if (record.set1630.isNotBlank()) "SET: ${record.set1630}" else null

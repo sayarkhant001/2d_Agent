@@ -41,7 +41,7 @@ fun ArchiveScreen(
                     Column {
                         Text("မှတ်တမ်းဟောင်းများ", fontWeight = FontWeight.Bold, fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onBackground)
-                        Text("${batches.size} ပွဲစဉ် မှတ်တမ်းတင်ထားသည်", fontSize = 11.sp,
+                        Text("${batches.size} ကြိမ် မှတ်တမ်းတင်ထားသည်", fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -115,7 +115,7 @@ private fun ArchiveTotalsBar(batches: List<ArchiveBatchSummary>) {
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            TotalStat(label = "ပွဲစဉ်",   value = "${batches.size}",       icon = Icons.Default.Archive)
+            TotalStat(label = "အကြိမ်",   value = "${batches.size}",       icon = Icons.Default.Archive)
             VerticalDividerLine()
             TotalStat(label = "ဘောင်ချာ", value = "$totalVouchers",         icon = Icons.Default.Receipt)
             VerticalDividerLine()
@@ -178,7 +178,7 @@ private fun ArchiveBatchCard(
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("ပွဲစဉ် ${batch.batchNumber}", fontWeight = FontWeight.Bold,
+                    Text("အကြိမ် ${batch.batchNumber}", fontWeight = FontWeight.Bold,
                         fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                     val dateLabel = if (batch.minDate == batch.maxDate) batch.minDate
                                     else "${batch.minDate} – ${batch.maxDate}"

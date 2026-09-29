@@ -474,7 +474,7 @@ fun BettingScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀",
+                            text = if (currentSession == "12:00 PM") "၁၂:၀၀ PM" else "၄:၃၀ PM",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = BettingPrimary
@@ -522,7 +522,7 @@ fun BettingScreen(
                     )
                     Column {
                         Text(
-                            text = "ပေါက်ဂဏန်း (${if (winningNumberForBatch.length == 2) winningNumberForBatch else viewModel.winningNumber.value}) ထွက်ပြီးပါပြီ။ ဤပွဲစဉ်တွင် ထိုးကြေးတင်၍ မရတော့ပါ။",
+                            text = "ပေါက်ဂဏန်း (${if (winningNumberForBatch.length == 2) winningNumberForBatch else viewModel.winningNumber.value}) ထွက်ပြီးပါပြီ။ ဤအကြိမ်တွင် ထိုးကြေးတင်၍ မရတော့ပါ။",
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 13.sp,
                             color = Color(0xFFB91C1C)
@@ -1389,7 +1389,7 @@ fun BettingScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("📋 Clipboard တွင် စာသားတွေ့ရှိပါသည်", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CobaltPrimary)
+                                        Text("Clipboard တွင် စာသားတွေ့ရှိပါသည်", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CobaltPrimary)
                                         Text(
                                             detClip.take(40) + if (detClip.length > 40) "..." else "",
                                             fontSize = 11.sp,
@@ -1548,7 +1548,7 @@ fun BettingScreen(
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("✏️ ပြန်လည် ပြင်ဆင်မည်", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("ပြန်လည် ပြင်ဆင်မည်", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
             )
@@ -1736,7 +1736,7 @@ fun BettingScreen(
                 onDismissRequest = { pasteErrors = emptyList() },
                 title = {
                     Text(
-                        "⚠️ စာကြောင်းအမှား (${pasteErrors.size}) ခု တွေ့ရှိပါသည်",
+                        "စာကြောင်းအမှား (${pasteErrors.size}) ခု တွေ့ရှိပါသည်",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.error
@@ -1782,7 +1782,7 @@ fun BettingScreen(
                 onDismissRequest = { bannedRemovalsNotification = emptyList() },
                 title = {
                     Text(
-                        "⚠️ ပိတ်ဂဏန်း / ကန့်သတ်ငွေကျော်လွန်မှု",
+                        "ပိတ်ဂဏန်း / ကန့်သတ်ငွေကျော်လွန်မှု",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.error

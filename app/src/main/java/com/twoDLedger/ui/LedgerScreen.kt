@@ -141,7 +141,7 @@ fun LedgerScreen(
                             border = BorderStroke(1.dp, if (currentSession == "12:00 PM") Color(0xFFFDE68A) else Color.Transparent)
                         ) {
                             Text(
-                                "☀️ ၁၂:၀၀",
+                                "၁၂:၀၀ PM",
                                 fontSize = 11.5.sp,
                                 fontWeight = if (currentSession == "12:00 PM") FontWeight.ExtraBold else FontWeight.Medium,
                                 color = if (currentSession == "12:00 PM") Color(0xFF92400E) else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -155,7 +155,7 @@ fun LedgerScreen(
                             border = BorderStroke(1.dp, if (currentSession == "4:30 PM") Color(0xFF93C5FD) else Color.Transparent)
                         ) {
                             Text(
-                                "🌙 ၄:၃၀",
+                                "၄:၃၀ PM",
                                 fontSize = 11.5.sp,
                                 fontWeight = if (currentSession == "4:30 PM") FontWeight.ExtraBold else FontWeight.Medium,
                                 color = if (currentSession == "4:30 PM") Color(0xFF1E40AF) else MaterialTheme.colorScheme.onSurfaceVariant,

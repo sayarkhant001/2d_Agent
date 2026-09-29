@@ -263,7 +263,7 @@ fun OverflowScreen(
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Text(
-                                                text = "💰 ကော်မရှင် ${dine.commissionRate}%",
+                                                text = "ကော်မရှင် ${dine.commissionRate}%",
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 color = Color(0xFFD97706)
@@ -612,7 +612,7 @@ fun OverflowScreen(
                             }
                             Spacer(Modifier.height(2.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("ပွဲချိန် : ${if (currentSession == "12:00 PM") "☀️ ၁၂:၀၀" else "🌙 ၄:၃၀"}", fontSize = 12.sp)
+                                Text("ပွဲချိန် : ${if (currentSession == "12:00 PM") "၁၂:၀၀ PM" else "၄:၃၀ PM"}", fontSize = 12.sp)
                                 Text(snapshot.timestamp, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
