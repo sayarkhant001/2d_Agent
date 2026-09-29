@@ -98,11 +98,18 @@ object TwoDApiClient {
             var holidayItem: TwoDHolidayItem? = null
             if (json.has("holiday") && !json.isNull("holiday")) {
                 val hj = json.getJSONObject("holiday")
-                holidayItem = TwoDHolidayItem(
-                    status = hj.optString("status", ""),
-                    date = hj.optString("date", ""),
-                    name = hj.optString("name", "")
-                )
+                val hName = hj.optString("name", "").trim()
+                val isHolidayReal = hName.isNotEmpty() &&
+                        !hName.equals("null", ignoreCase = true) &&
+                        !hName.equals("none", ignoreCase = true) &&
+                        hName != "-"
+                if (isHolidayReal) {
+                    holidayItem = TwoDHolidayItem(
+                        status = hj.optString("status", ""),
+                        date = hj.optString("date", ""),
+                        name = hName
+                    )
+                }
             }
 
             TwoDLiveResponse(

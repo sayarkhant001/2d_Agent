@@ -84,7 +84,27 @@ object TwoDMarketCalendar {
         SETHoliday("2026-10-23", "King Chulalongkorn Memorial Day", "ချူလာလောင်ကွန်းနေ့"),
         SETHoliday("2026-12-07", "Substitution for King Bhumibol Birthday", "ဖခင်များနေ့ အစားထိုးပိတ်ရက်"),
         SETHoliday("2026-12-10", "Constitution Day", "ဖွဲ့စည်းပုံအခြေခံဥပဒေနေ့"),
-        SETHoliday("2026-12-31", "New Year's Eve", "နှစ်ဟောင်းကုန် ရုံးပိတ်ရက်")
+        SETHoliday("2026-12-31", "New Year's Eve", "နှစ်ဟောင်းကုန် ရုံးပိတ်ရက်"),
+
+        // 2027 SET Holidays
+        SETHoliday("2027-01-01", "New Year's Day", "နှစ်သစ်ကူး ရုံးပိတ်ရက်"),
+        SETHoliday("2027-02-22", "Substitution for Makha Bucha Day", "မာခါဘူချာနေ့ အစားထိုးပိတ်ရက်"),
+        SETHoliday("2027-04-06", "Chakri Memorial Day", "ချက်ကရီနေ့"),
+        SETHoliday("2027-04-13", "Songkran Festival", "ထိုင်းသင်္ကြန်ပွဲတော် ပိတ်ရက်"),
+        SETHoliday("2027-04-14", "Songkran Festival", "ထိုင်းသင်္ကြန်ပွဲတော် ပိတ်ရက်"),
+        SETHoliday("2027-04-15", "Songkran Festival", "ထိုင်းသင်္ကြန်ပွဲတော် ပိတ်ရက်"),
+        SETHoliday("2027-05-03", "Substitution for National Labour Day", "အလုပ်သမားနေ့ အစားထိုးပိတ်ရက်"),
+        SETHoliday("2027-05-04", "Coronation Day", "နန်းတက်ပွဲ အထိမ်းအမှတ်နေ့"),
+        SETHoliday("2027-05-20", "Visakha Bucha Day", "ကဆုန်လပြည့် ဗုဒ္ဓနေ့"),
+        SETHoliday("2027-06-03", "H.M. Queen Suthida's Birthday", "မိဖုရားကြီး သုထိတာ မွေးနေ့"),
+        SETHoliday("2027-07-19", "Substitution for Asarnha Bucha Day", "ဝါဆိုလပြည့်နေ့ အစားထိုးပိတ်ရက်"),
+        SETHoliday("2027-07-28", "H.M. King Maha Vajiralongkorn's Birthday", "ဘုရင်မင်းမြတ် မွေးနေ့"),
+        SETHoliday("2027-08-12", "H.M. Queen Sirikit's Birthday / Mother's Day", "မိခင်များနေ့ ရုံးပိတ်ရက်"),
+        SETHoliday("2027-10-13", "King Bhumibol Memorial Day", "ဘုရင်ကြီး ဘူမိဘော အောက်မေ့ဖွယ်နေ့"),
+        SETHoliday("2027-10-25", "Substitution for King Chulalongkorn Day", "ချူလာလောင်ကွန်းနေ့ အစားထိုးပိတ်ရက်"),
+        SETHoliday("2027-12-06", "Substitution for King Bhumibol Birthday", "ဖခင်များနေ့ အစားထိုးပိတ်ရက်"),
+        SETHoliday("2027-12-10", "Constitution Day", "ဖွဲ့စည်းပုံအခြေခံဥပဒေနေ့"),
+        SETHoliday("2027-12-31", "New Year's Eve", "နှစ်ဟောင်းကုန် ရုံးပိတ်ရက်")
     )
 
     fun getHoliday(dateStr: String): SETHoliday? {
@@ -175,19 +195,18 @@ object TwoDMarketCalendar {
         val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(now.time)
         val dayInfo = checkDate(year, month, day, todayStr)
 
-        // If the live API returns an explicit holiday marker
-        val apiIndicatesHoliday = apiHoliday != null && (
-            (apiHoliday.name.isNotBlank() && apiHoliday.name.lowercase() != "null") ||
-            apiHoliday.status == "3" ||
-            apiHoliday.status == "2"
-        )
-        val apiReason = apiHoliday?.name?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
+        // If the live API returns an explicit holiday marker with a valid name
+        val apiHolidayName = apiHoliday?.name?.trim()
+        val hasValidApiHoliday = !apiHolidayName.isNullOrBlank() &&
+                !apiHolidayName.equals("null", ignoreCase = true) &&
+                !apiHolidayName.equals("none", ignoreCase = true) &&
+                apiHolidayName != "-"
 
-        val isActuallyClosed = dayInfo.state != DayMarketState.OPEN || apiIndicatesHoliday
+        val isActuallyClosed = dayInfo.state != DayMarketState.OPEN || hasValidApiHoliday
 
         return if (isActuallyClosed) {
             val finalReason = when {
-                apiReason != null && apiReason.isNotBlank() -> "တရားဝင် ဈေးကွက်မှ အသိပေးချက်: $apiReason"
+                hasValidApiHoliday -> "တရားဝင် ဈေးကွက်မှ အသိပေးချက်: $apiHolidayName"
                 dayInfo.state == DayMarketState.HOLIDAY_CLOSED -> dayInfo.reasonMm
                 dayInfo.state == DayMarketState.WEEKEND_CLOSED -> dayInfo.reasonMm
                 else -> "2D ဈေးကွက် ပိတ်ထားပါသည်"
@@ -203,7 +222,7 @@ object TwoDMarketCalendar {
                 isOpen = true,
                 statusBadge = "ဈေးကွက် ဖွင့်လှစ်ပါသည်",
                 details = "ယနေ့ 2D ပုံမှန် ဈေးကွက်ဖွင့်လှစ်ပါသည် (၂ ကြိမ် ထွက်ရှိမည်)",
-                reason = "တနင်္လာ မှ သောကြာ ပုံမှန်ရုံးဖွင့်ရက်"
+                reason = "တနင်္လာ မှ သောကြာ ပုံမှန်ရုံးဖွင့်ရက် (မနက် ၁၂:၀၁ / ညနေ ၄:၃၀)"
             )
         }
     }

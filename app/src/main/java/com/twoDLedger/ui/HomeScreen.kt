@@ -93,6 +93,10 @@ fun HomeScreen(
     val allExportRecords by viewModel.allExportRecords.collectAsStateWithLifecycle()
     val customers by viewModel.customers.collectAsStateWithLifecycle()
     val winningNumber by viewModel.winningNumber.collectAsStateWithLifecycle()
+    val win1200 by viewModel.winningNumber1200.collectAsStateWithLifecycle()
+    val win1630 by viewModel.winningNumber1630.collectAsStateWithLifecycle()
+    val ind900 by viewModel.indicator900.collectAsStateWithLifecycle()
+    val ind1400 by viewModel.indicator1400.collectAsStateWithLifecycle()
 
     var showMarketCalendarDialog by remember { mutableStateOf(false) }
     var showBatchDropdown by remember { mutableStateOf(false) }
@@ -109,6 +113,7 @@ fun HomeScreen(
         licenseManager.syncServerTime()
         licenseDetails = licenseManager.getLicenseDetails()
         viewModel.fetchLive2D()
+        viewModel.fetch30DayHistory()
     }
 
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
@@ -220,6 +225,7 @@ fun HomeScreen(
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            viewModel.fetch30DayHistory()
                             showMarketCalendarDialog = true
                         }
                     ) {
@@ -928,6 +934,10 @@ fun HomeScreen(
             TwoDMarketCalendarDialog(
                 apiHoliday = liveHoliday,
                 winningHistoryList = winningHistory,
+                todayWin1200 = win1200,
+                todayWin1630 = win1630,
+                todayInd900 = ind900,
+                todayInd1400 = ind1400,
                 onDismissRequest = { showMarketCalendarDialog = false }
             )
         }

@@ -7,6 +7,7 @@ import java.util.Locale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.activity.compose.BackHandler
 import com.twoDLedger.ui.theme.*
 import androidx.compose.animation.AnimatedVisibility
@@ -318,10 +319,10 @@ fun WinnerScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "ထိုင်း 2D တိုက်ရိုက်",
+                                    text = "ထိုင်း 2D တိုက်ရိုက် ရလဒ်များ",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    color = TextPrimary,
+                                    fontSize = 13.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     softWrap = false
                                 )
@@ -329,35 +330,84 @@ fun WinnerScreen(
                             FilledTonalButton(
                                 onClick = { showRealtimeLiveDialog = true },
                                 colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = Color(0xFFFEE2E2),
-                                    contentColor = Color(0xFFDC2626)
+                                    containerColor = Color(0xFFEFF6FF),
+                                    contentColor = CobaltPrimary
                                 ),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier.height(28.dp),
-                                shape = RoundedCornerShape(6.dp)
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(30.dp),
+                                shape = RoundedCornerShape(8.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFDC2626))
+                                        .background(CobaltPrimary)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("တိုက်ရိုက် ကြည့်မည်", fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text("တိုက်ရိုက် ကြည့်မည်", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                             }
                         }
 
                         if (liveData != null) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "အညွှန်း: ${liveData?.set} | တန်ဖိုး: ${liveData?.value} | အချိန်: ${liveData?.time}",
-                                fontSize = 10.5.sp,
-                                color = TextSecondary,
-                                fontFamily = FontFamily.Monospace,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        } else if (liveHoliday != null && liveHoliday?.name?.isNotBlank() == true) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = "SET: ${liveData?.set ?: "--"}",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.weight(1.3f)
+                                ) {
+                                    Text(
+                                        text = "Val: ${liveData?.value ?: "--"}",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.weight(1.1f)
+                                ) {
+                                    val timePart = liveData?.time?.split(" ")?.lastOrNull() ?: liveData?.time ?: "--"
+                                    Text(
+                                        text = "Time: $timePart",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
+                            }
+                        } else if (liveHoliday != null && !liveHoliday?.name.isNullOrBlank() && !liveHoliday?.name.equals("NULL", ignoreCase = true) && !liveHoliday?.name.equals("none", ignoreCase = true)) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "ယနေ့ ဈေးကွက် ပိတ်ရက်ဖြစ်ပါသည် (${liveHoliday?.name})",
@@ -381,20 +431,22 @@ fun WinnerScreen(
                                 label = "အဖွင့်",
                                 number = ind900.ifBlank { "--" },
                                 isOfficial = false,
+                                isSelected = false,
                                 onSelect = {}
                             )
 
                             SlotCard(
                                 modifier = Modifier.weight(1f),
-                                time = "မွန်းတည့် ၁၂:၀၀",
+                                time = "မွန်းတည့် ၁၂:၀၁",
                                 label = "ပေါက်သီး",
                                 number = win1200.ifBlank { "--" },
                                 isOfficial = true,
+                                isSelected = selectedSession == "12:00 PM",
                                 onSelect = {
+                                    selectedSession = "12:00 PM"
                                     if (win1200.isNotBlank() && win1200 != "--") {
-                                        selectedSession = "12:00 PM"
                                         winningNumber = win1200
-                                        Toast.makeText(context, "ပေါက်ဂဏန်း ($win1200) ရွေးချယ်ပြီးပါပြီ။ တွက်ချက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "မွန်းတည့် (၁၂:၀၁) ပေါက်ဂဏန်း ($win1200) ရွေးချယ်ပြီးပါပြီ", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             )
@@ -405,6 +457,7 @@ fun WinnerScreen(
                                 label = "အဖွင့်",
                                 number = ind1400.ifBlank { "--" },
                                 isOfficial = false,
+                                isSelected = false,
                                 onSelect = {}
                             )
 
@@ -414,11 +467,12 @@ fun WinnerScreen(
                                 label = "ပေါက်သီး",
                                 number = win1630.ifBlank { "--" },
                                 isOfficial = true,
+                                isSelected = selectedSession == "4:30 PM",
                                 onSelect = {
+                                    selectedSession = "4:30 PM"
                                     if (win1630.isNotBlank() && win1630 != "--") {
-                                        selectedSession = "4:30 PM"
                                         winningNumber = win1630
-                                        Toast.makeText(context, "ပေါက်ဂဏန်း ($win1630) ရွေးချယ်ပြီးပါပြီ။ တွက်ချက်ရန် 'ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ' ကိုနှိပ်ပါ", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "ညနေ (၄:၃၀) ပေါက်ဂဏန်း ($win1630) ရွေးချယ်ပြီးပါပြီ", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             )
@@ -426,7 +480,7 @@ fun WinnerScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "* နံနက် ၉:၀၀ နှင့် မွန်းလွဲ ၂:၀၀ မှာ အစောပိုင်း အဖွင့်ဂဏန်းသာဖြစ်ပြီး၊ မွန်းတည့် ၁၂:၀၀ နှင့် ညနေ ၄:၃၀ မှာ တရားဝင်ပေါက်သီး ဖြစ်ပါသည်။",
+                            text = "* နံနက် ၉:၀၀ နှင့် မွန်းလွဲ ၂:၀၀ မှာ အစောပိုင်း အဖွင့်ဂဏန်းသာဖြစ်ပြီး၊ မွန်းတည့် ၁၂:၀၁ နှင့် ညနေ ၄:၃၀ မှာ တရားဝင်ပေါက်သီး ဖြစ်ပါသည်။",
                             fontSize = 10.sp,
                             color = TextMuted,
                             lineHeight = 14.sp
@@ -467,125 +521,176 @@ fun WinnerScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = SlateSurface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
+                        // Calculation Header: Active Session & Toggle
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf("12:00 PM", "4:30 PM").forEach { sess ->
-                                val isSel = selectedSession == sess
-                                OutlinedButton(
-                                    onClick = {
-                                        selectedSession = sess
-                                        val sLive = if (sess == "12:00 PM") win1200 else win1630
-                                        if (sLive.isNotBlank() && sLive.length == 2) {
-                                            winningNumber = sLive
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        containerColor = if (isSel) PrimaryGold.copy(alpha = 0.15f) else Color.Transparent,
-                                        contentColor = if (isSel) PrimaryGold else TextSecondary
-                                    ),
-                                    border = BorderStroke(1.5.dp, if (isSel) PrimaryGold else CardBorder)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(CobaltLight),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = if (sess == "12:00 PM") "မနက်ပိုင်း (၁၂:၀၀)" else "ညနေပိုင်း (၄:၃၀)",
-                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 12.sp
+                                    Icon(
+                                        Icons.Default.AccessTime,
+                                        contentDescription = null,
+                                        tint = CobaltPrimary,
+                                        modifier = Modifier.size(16.dp)
                                     )
+                                }
+                                Column {
+                                    Text(
+                                        text = if (selectedSession == "12:00 PM") "မွန်းတည့် ၁၂:၀၁ ပေါက်သီး စာရင်း" else "ညနေ ၄:၃၀ ပေါက်သီး စာရင်း",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (isDeclared) "ပေါက်သီးတွက်ချက်ပြီး" else "ပေါက်ဂဏန်း ထည့်သွင်းရန်",
+                                        fontSize = 11.sp,
+                                        color = if (isDeclared) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // Quick session toggle pills
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                listOf(Pair("12:00 PM", "၁၂:၀၁"), Pair("4:30 PM", "၄:၃၀")).forEach { (sess, label) ->
+                                    val isSel = selectedSession == sess
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isSel) CobaltPrimary else Color.Transparent,
+                                        modifier = Modifier.clickable {
+                                            selectedSession = sess
+                                            val sLive = if (sess == "12:00 PM") win1200 else win1630
+                                            if (sLive.isNotBlank() && sLive.length == 2 && sLive != "--") {
+                                                winningNumber = sLive
+                                            }
+                                        }
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
                                 }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        // Input row: Winning Number & Multiplier
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (selectedSession == "12:00 PM") Color(0xFFFEF3C7) else Color(0xFFDBEAFE),
-                                modifier = Modifier.weight(1.1f).height(54.dp),
-                                onClick = {
-                                    selectedSession = if (selectedSession == "12:00 PM") "4:30 PM" else "12:00 PM"
-                                }
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text("အချိန်ပိုင်း", fontSize = 9.5.sp, color = if (selectedSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF))
-                                    Text(if (selectedSession == "12:00 PM") "၁၂:၀၀" else "၄:၃၀", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, color = if (selectedSession == "12:00 PM") Color(0xFF92400E) else Color(0xFF1E40AF))
-                                }
-                            }
-
                             OutlinedTextField(
                                 value = winningNumber,
                                 onValueChange = {
                                     if (it.length <= 2) winningNumber = it.filter { c -> c.isDigit() }
                                 },
-                                label = { Text("ပေါက်ဂဏန်း (2D)", fontSize = 11.sp) },
-                                placeholder = { Text("00-99", fontSize = 12.sp, color = TextMuted) },
+                                label = { Text("ပေါက်ဂဏန်း (၂ လုံး)", fontSize = 11.5.sp, maxLines = 1, softWrap = false) },
+                                placeholder = { Text("00-99", fontSize = 13.sp, color = TextMuted) },
+                                textStyle = LocalTextStyle.current.copy(
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = CobaltPrimary
+                                ),
                                 modifier = Modifier.weight(1.5f),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PrimaryGold,
+                                    focusedBorderColor = CobaltPrimary,
                                     unfocusedBorderColor = CardBorder,
-                                    focusedTextColor = TextPrimary,
-                                    unfocusedTextColor = TextPrimary
+                                    focusedTextColor = CobaltPrimary,
+                                    unfocusedTextColor = CobaltPrimary
                                 )
                             )
 
                             OutlinedTextField(
                                 value = multiplierText,
                                 onValueChange = { multiplierText = it.filter { c -> c.isDigit() } },
-                                label = { Text("အဆ", fontSize = 11.sp) },
+                                label = { Text("အဆ (ဆ)", fontSize = 11.5.sp, maxLines = 1, softWrap = false) },
+                                textStyle = LocalTextStyle.current.copy(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PrimaryGold,
-                                    unfocusedBorderColor = CardBorder,
-                                    focusedTextColor = TextPrimary,
-                                    unfocusedTextColor = TextPrimary
+                                    focusedBorderColor = CobaltPrimary,
+                                    unfocusedBorderColor = CardBorder
                                 )
                             )
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        // Action Buttons Row
+                        if (!isDeclared) {
                             Button(
                                 onClick = {
                                     runCalculation(winningNumber, multiplierText, selectedSession)
                                 },
-                                modifier = Modifier.weight(1.5f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
                                 enabled = winningNumber.length == 2,
                                 colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("ပေါက်သီးတွက်ချက်ရန် နှိပ်ပါ", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, softWrap = false)
+                                Text("ပေါက်သီးတွက်ချက်မည်", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, maxLines = 1, softWrap = false)
                             }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        runCalculation(winningNumber, multiplierText, selectedSession)
+                                    },
+                                    modifier = Modifier.weight(1.2f).height(46.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = CobaltPrimary),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("ပြန်တွက်မည်", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1, softWrap = false)
+                                }
 
-                            if (isDeclared) {
                                 Button(
                                     onClick = { showDailyHoldDialog = true },
+                                    modifier = Modifier.weight(0.9f).height(46.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF97316)),
                                     shape = RoundedCornerShape(10.dp),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                    contentPadding = PaddingValues(horizontal = 6.dp)
                                 ) {
                                     Icon(Icons.Default.Assessment, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -594,15 +699,15 @@ fun WinnerScreen(
 
                                 OutlinedButton(
                                     onClick = { showClearDialog = true },
-                                    modifier = Modifier.weight(0.85f),
+                                    modifier = Modifier.weight(0.9f).height(46.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF5350)),
                                     border = BorderStroke(1.dp, Color(0xFFEF5350)),
                                     shape = RoundedCornerShape(10.dp),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                    contentPadding = PaddingValues(horizontal = 6.dp)
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("ပြန်ဖျက်", fontSize = 12.sp, maxLines = 1, softWrap = false)
+                                    Text("ပယ်ဖျက်", fontSize = 12.sp, maxLines = 1, softWrap = false)
                                 }
                             }
                         }
@@ -994,7 +1099,11 @@ fun TwoDRealtimeLiveDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (holiday != null && holiday.name.isNotBlank()) {
+                val hasRealHoliday = holiday != null && holiday.name.isNotBlank() &&
+                        !holiday.name.equals("NULL", ignoreCase = true) &&
+                        !holiday.name.equals("none", ignoreCase = true) &&
+                        holiday.name != "-"
+                if (hasRealHoliday) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
@@ -1346,18 +1455,30 @@ fun SlotCard(
     label: String,
     number: String,
     isOfficial: Boolean,
+    isSelected: Boolean = false,
     onSelect: () -> Unit
 ) {
+    val cardBg = when {
+        isSelected -> Color(0xFFEFF6FF)
+        isOfficial -> MaterialTheme.colorScheme.surface
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    }
+    val cardBorder = when {
+        isSelected -> BorderStroke(2.dp, CobaltPrimary)
+        isOfficial -> BorderStroke(1.2.dp, CobaltPrimary.copy(alpha = 0.4f))
+        else -> BorderStroke(1.dp, CardBorder.copy(alpha = 0.5f))
+    }
+    val numColor = when {
+        isSelected -> CobaltPrimary
+        isOfficial && number != "--" -> CobaltPrimary
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
     Card(
-        modifier = modifier.clickable(enabled = isOfficial && number.length == 2 && number != "--") { onSelect() },
+        modifier = modifier.clickable(enabled = isOfficial) { onSelect() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isOfficial) SlateDarkBackground else SlateSurfaceVariant
-        ),
-        border = BorderStroke(
-            1.dp,
-            if (isOfficial) PrimaryGold.copy(alpha = 0.5f) else CardBorder
-        )
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = cardBorder
     ) {
         Column(
             modifier = Modifier
@@ -1368,42 +1489,42 @@ fun SlotCard(
             Text(
                 text = time,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isOfficial) PrimaryGold else TextSecondary,
+                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                color = if (isSelected) CobaltPrimary else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 softWrap = false
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
-                fontSize = 9.sp,
-                color = if (isOfficial) CobaltPrimary else TextMuted,
+                fontSize = 9.5.sp,
+                color = if (isOfficial) CobaltPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(5.dp))
             Text(
                 text = number,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace,
-                color = if (isOfficial) Color(0xFFFFD54F) else TextPrimary,
+                color = numColor,
                 maxLines = 1,
                 softWrap = false
             )
-            if (isOfficial && number.length == 2 && number != "--") {
+            if (isOfficial) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = PrimaryGold.copy(alpha = 0.2f),
+                    color = if (isSelected) CobaltPrimary else CobaltLight,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 ) {
                     Text(
-                        text = "အသုံးပြု",
+                        text = if (isSelected) "ရွေးချယ်ထား" else "ရွေးမည်",
                         fontSize = 9.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryGold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Color.White else CobaltPrimary,
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                         maxLines = 1,
                         softWrap = false
                     )
