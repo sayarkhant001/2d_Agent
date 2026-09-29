@@ -61,7 +61,9 @@ fun TwoDDailyHoldDialog(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val todayStr = remember {
-        SimpleDateFormat("dd-MMM-yyyy", Locale.US).format(Date()).uppercase()
+        val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val dw = com.twoDLedger.logic.TwoDMarketCalendar.getBurmeseDayOfWeek(Date())
+        "$d ($dw)"
     }
 
     // Helper to calculate hold metrics for a specific session

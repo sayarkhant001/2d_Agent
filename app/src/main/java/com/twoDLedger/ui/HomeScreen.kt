@@ -81,8 +81,11 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToResult: (Int) -> Unit = {}
 ) {
-    val dateFormat = SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH)
-    val currentDateStr = remember { dateFormat.format(Date()) }
+    val todayDayOfWeek = remember { TwoDMarketCalendar.getBurmeseDayOfWeek(Date()) }
+    val currentDateStr = remember {
+        val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        "$d ($todayDayOfWeek)"
+    }
     val currentBatch by viewModel.currentBatch.collectAsStateWithLifecycle()
     val maxBatch by viewModel.maxBatch.collectAsStateWithLifecycle()
     val currentSession by viewModel.currentSession.collectAsStateWithLifecycle()

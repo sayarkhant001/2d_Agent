@@ -234,4 +234,18 @@ object TwoDMarketCalendar {
             .sortedBy { it.date }
             .take(limit)
     }
+
+    fun getBurmeseDayOfWeek(date: Date): String {
+        val cal = Calendar.getInstance().apply { time = date }
+        return when (cal.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.SUNDAY -> "တနင်္ဂနွေ"
+            Calendar.MONDAY -> "တနင်္လာ"
+            Calendar.TUESDAY -> "အင်္ဂါ"
+            Calendar.WEDNESDAY -> "ဗုဒ္ဓဟူး"
+            Calendar.THURSDAY -> "ကြာသပတေး"
+            Calendar.FRIDAY -> "သောကြာ"
+            Calendar.SATURDAY -> "စနေ"
+            else -> ""
+        }
+    }
 }

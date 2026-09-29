@@ -172,13 +172,17 @@ fun VouchersScreen(
                     )
 
                     val todayStr = remember {
-                        SimpleDateFormat("dd-MMM-yyyy", Locale.US).format(Date()).uppercase()
+                        val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                        val dw = com.twoDLedger.logic.TwoDMarketCalendar.getBurmeseDayOfWeek(Date())
+                        "$d ($dw)"
                     }
                     Text(
-                        text = "$todayStr $currentBatch",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "$todayStr • အကြိမ် $currentBatch",
+                        color = Color.White.copy(alpha = 0.95f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
                     )
 
                     Surface(
@@ -192,6 +196,8 @@ fun VouchersScreen(
                             color = VoucherHeaderBlue,
                             fontWeight = FontWeight.Black,
                             fontSize = 12.5.sp,
+                            maxLines = 1,
+                            softWrap = false,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                         )
                     }
@@ -392,7 +398,10 @@ fun VouchersScreen(
                             voucherWithBets.bets.filter { it.number == winningNumber }.sumOf { it.amount } * 80L
                         } else 0L
 
-                        val voucherDateStr = SimpleDateFormat("dd-MMM-yyyy", Locale.US).format(Date(voucherWithBets.voucher.timestamp)).uppercase()
+                        val vDate = Date(voucherWithBets.voucher.timestamp)
+                        val vDateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(vDate)
+                        val vDayOfWeek = com.twoDLedger.logic.TwoDMarketCalendar.getBurmeseDayOfWeek(vDate)
+                        val voucherDateStr = "$vDateStr ($vDayOfWeek)"
                         val isExpanded = expandedVoucherIds.contains(voucherWithBets.voucher.id)
 
                         Column(modifier = Modifier.fillMaxWidth()) {
@@ -402,6 +411,8 @@ fun VouchersScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.5.sp,
                                 color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                             )
 

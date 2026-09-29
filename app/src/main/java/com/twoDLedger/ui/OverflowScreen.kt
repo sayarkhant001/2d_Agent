@@ -775,11 +775,18 @@ fun OverflowScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val oDateStr = remember {
+                    val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                    val dw = com.twoDLedger.logic.TwoDMarketCalendar.getBurmeseDayOfWeek(Date())
+                    "$d ($dw)"
+                }
                 Text(
-                    text = "${SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH).format(Date()).uppercase()} $currentBatch",
+                    text = "$oDateStr • အကြိမ် $currentBatch",
                     color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false
                 )
 
                 Surface(
