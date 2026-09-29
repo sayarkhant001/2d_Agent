@@ -1,5 +1,9 @@
 package com.twoDLedger.ui
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -125,14 +129,39 @@ fun WinningHistoryScreen(
 
 @Composable
 fun HistoryDayCard(record: WinningHistory) {
+    val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) }
+    val isToday = record.date == todayStr
+
+    val dowMm = remember(record.date) {
+        try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val d = sdf.parse(record.date)
+            if (d != null) {
+                val cal = Calendar.getInstance().apply { time = d }
+                when (cal.get(Calendar.DAY_OF_WEEK)) {
+                    Calendar.SUNDAY -> "တနင်္ဂနွေ"
+                    Calendar.MONDAY -> "တနင်္လာ"
+                    Calendar.TUESDAY -> "အင်္ဂါ"
+                    Calendar.WEDNESDAY -> "ဗုဒ္ဓဟူး"
+                    Calendar.THURSDAY -> "ကြာသပတေး"
+                    Calendar.FRIDAY -> "သောကြာ"
+                    Calendar.SATURDAY -> "စနေ"
+                    else -> ""
+                }
+            } else ""
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Date
+        Column(modifier = Modifier.padding(14.dp)) {
+            // Header: Date + Day of week + Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -148,31 +177,57 @@ fun HistoryDayCard(record: WinningHistory) {
                     Text(
                         text = record.date,
                         fontWeight = FontWeight.Black,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    if (dowMm.isNotBlank()) {
+                        Text(
+                            text = "($dowMm)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (isToday) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = CobaltLight
+                        ) {
+                            Text(
+                                text = "ယနေ့",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = CobaltPrimary,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
                 }
+
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFEFF6FF),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE))
                 ) {
                     Text(
                         text = "၂ ကြိမ် ထွက်",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        color = CobaltPrimary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // 4 Indicator Row: 9:00 AM, 12:00 PM (Win), 2:00 PM, 4:30 PM (Win)
+            // 4 Indicator Row: 9:00 AM, 12:00 PM (Official), 2:00 PM, 4:30 PM (Official)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // 9:00 AM Modern Opening
                 IndicatorBox(
@@ -190,7 +245,7 @@ fun HistoryDayCard(record: WinningHistory) {
                     subtitle = "ပေါက်ဂဏန်း",
                     number = record.num1200.ifBlank { "--" },
                     isOfficialWinner = true,
-                    setDetail = if (record.set1200.isNotBlank()) "SET: ${record.set1200}" else null
+                    setDetail = if (record.set1200.isNotBlank()) "SET ${record.set1200}" else null
                 )
 
                 // 2:00 PM Modern Opening
@@ -209,7 +264,7 @@ fun HistoryDayCard(record: WinningHistory) {
                     subtitle = "ပေါက်ဂဏန်း",
                     number = record.num1630.ifBlank { "--" },
                     isOfficialWinner = true,
-                    setDetail = if (record.set1630.isNotBlank()) "SET: ${record.set1630}" else null
+                    setDetail = if (record.set1630.isNotBlank()) "SET ${record.set1630}" else null
                 )
             }
         }
@@ -225,28 +280,18 @@ fun IndicatorBox(
     isOfficialWinner: Boolean,
     setDetail: String? = null
 ) {
-    val bgColor = if (isOfficialWinner) {
-        Color(0xFFFEF3C7).copy(alpha = 0.6f)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-    }
-    val borderColor = if (isOfficialWinner) {
-        Color(0xFFF59E0B).copy(alpha = 0.5f)
-    } else {
-        Color.Transparent
-    }
-    val numberColor = if (isOfficialWinner) {
-        Color(0xFFB45309)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val bgColor = if (isOfficialWinner) Color(0xFFEFF6FF) else Color(0xFFF8FAFC)
+    val borderColor = if (isOfficialWinner) Color(0xFFBFDBFE) else Color(0xFFE2E8F0)
+    val titleColor = if (isOfficialWinner) Color(0xFF1E40AF) else Color(0xFF334155)
+    val numberColor = if (isOfficialWinner) CobaltPrimary else Color(0xFF0F172A)
+    val subtitleColor = if (isOfficialWinner) Color(0xFF1D4ED8) else Color(0xFF64748B)
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+            .border(1.2.dp, borderColor, RoundedCornerShape(10.dp))
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -254,30 +299,39 @@ fun IndicatorBox(
                 text = title,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isOfficialWinner) Color(0xFF92400E) else MaterialTheme.colorScheme.outline
+                color = titleColor,
+                maxLines = 1,
+                softWrap = false
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 text = number,
                 fontWeight = FontWeight.Black,
                 fontSize = if (isOfficialWinner) 22.sp else 18.sp,
                 fontFamily = FontFamily.Monospace,
-                color = numberColor
+                color = numberColor,
+                maxLines = 1,
+                softWrap = false
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 text = subtitle,
-                fontSize = 9.sp,
-                fontWeight = if (isOfficialWinner) FontWeight.ExtraBold else FontWeight.Normal,
-                color = if (isOfficialWinner) Color(0xFFB45309) else MaterialTheme.colorScheme.outline
+                fontSize = 9.5.sp,
+                fontWeight = if (isOfficialWinner) FontWeight.Bold else FontWeight.Medium,
+                color = subtitleColor,
+                maxLines = 1,
+                softWrap = false
             )
             if (setDetail != null) {
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     text = setDetail,
-                    fontSize = 8.sp,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.SemiBold,
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.outline
+                    color = Color(0xFF475569),
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
