@@ -102,7 +102,7 @@ val KeypadShadowLight    = Color(0xFF94A3B8)
 
 val KeypadActionEmerald  = Color(0xFF2563EB)  // R (Permutation) key (Royal Blue)
 val KeypadActionTeal     = Color(0xFF0891B2)  // Doubles (အပူး) key (Cyan)
-val KeypadBackspaceRed   = Color(0xFFDC2626)  // ⌫ Backspace key
+val KeypadBackspaceRed   = Color(0xFFDC2626)  // Backspace key
 val KeypadClearAmber     = Color(0xFFD97706)  // ရှင်း Clear key
 val KeypadSubmitGold     = Color(0xFFEAB308)  // OK / Enter key
 val KeypadSubmitBg       = Color(0xFF1D4ED8)  // Royal Cobalt Submit

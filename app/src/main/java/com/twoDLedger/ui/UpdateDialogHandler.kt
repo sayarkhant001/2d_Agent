@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -210,7 +211,9 @@ fun UpdateDialogHandler(owner: String, repo: String) {
                             }
                         }
                     ) {
-                        Text("📱 Telegram Bot မှ ရယူမည်")
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Telegram Bot မှ ရယူမည်")
                     }
                     TextButton(
                         modifier = Modifier.fillMaxWidth(),
@@ -304,7 +307,9 @@ fun UpdateDialogHandler(owner: String, repo: String) {
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("📱 Telegram Bot မှ ဒေါင်းလုဒ်လုပ်မည်")
+                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Telegram Bot မှ ဒေါင်းလုဒ်လုပ်မည်")
                             }
                             Button(
                                 onClick = {

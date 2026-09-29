@@ -1285,14 +1285,14 @@ fun BettingScreen(
                                 ) { handleSpecial("အပူး") }
                             }
 
-                            // Row 3: [ 7 ] [ 8 ] [ 9 ] [ ⌫ ]
+                            // Row 3: [ 7 ] [ 8 ] [ 9 ] [ Backspace ]
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 TactileKeypadButton("7", modifier = Modifier.weight(1f)) { appendText("7") }
                                 TactileKeypadButton("8", modifier = Modifier.weight(1f)) { appendText("8") }
                                 TactileKeypadButton("9", modifier = Modifier.weight(1f)) { appendText("9") }
                                 TactileKeypadButton(
-                                    text = "⌫",
-                                    subtitle = "ဖျက်",
+                                    text = "ဖျက်",
+                                    subtitle = null,
                                     icon = Icons.AutoMirrored.Filled.Backspace,
                                     bgColor = Color(0xFFEF4444),
                                     contentColor = Color.White,
@@ -1343,7 +1343,8 @@ fun BettingScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("⚡ အမြန်ထိုး စာရင်းထည့်သွင်းခြင်း", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Icon(Icons.Default.Bolt, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(20.dp))
+                            Text("အမြန်ထိုး စာရင်းထည့်သွင်းခြင်း", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             if (lineCount > 0) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),

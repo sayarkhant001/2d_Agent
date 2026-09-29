@@ -471,12 +471,15 @@ fun VouchersScreen(
                                                 )
                                                 if (isWon) {
                                                     Spacer(Modifier.height(2.dp))
-                                                    Text(
-                                                        text = "🎉 ပေါက်သီး: %,d ကျပ်".format(wonAmount),
-                                                        fontSize = 11.5.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFFD97706)
-                                                    )
+                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
+                                                        Text(
+                                                            text = "ပေါက်သီး: %,d ကျပ်".format(wonAmount),
+                                                            fontSize = 11.5.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFFD97706)
+                                                        )
+                                                    }
                                                 }
                                             }
 
@@ -585,7 +588,7 @@ fun VouchersScreen(
                                                     ) {
                                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                             Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = Color(0xFFB45309), modifier = Modifier.size(16.dp))
-                                                            Text("🎉 ပေါက်ဂဏန်း ($winningNumber) ပါဝင်ပါသည်", fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFF92400E))
+                                                            Text("ပေါက်ဂဏန်း ($winningNumber) ပါဝင်ပါသည်", fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = Color(0xFF92400E))
                                                         }
                                                         Text("လျော်: ${String.format("%,d", wonAmount)} ကျပ်", fontWeight = FontWeight.Black, fontSize = 12.sp, color = Color(0xFFB45309))
                                                     }

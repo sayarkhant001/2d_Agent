@@ -963,16 +963,28 @@ fun TwoDRealtimeLiveDialog(
                     )
                 }
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFFFEE2E2)
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFFEE2E2),
+                    border = BorderStroke(1.dp, Color(0xFFFECACA))
                 ) {
-                    Text(
-                        "● LIVE",
-                        color = Color(0xFFDC2626),
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFDC2626))
+                        )
+                        Text(
+                            "LIVE",
+                            color = Color(0xFFDC2626),
+                            fontWeight = FontWeight.Black,
+                            fontSize = 10.5.sp
+                        )
+                    }
                 }
             }
         },
@@ -1012,7 +1024,7 @@ fun TwoDRealtimeLiveDialog(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
-                    color = SlateDarkBackground,
+                    color = Color(0xFFEFF6FF),
                     border = BorderStroke(1.5.dp, CobaltPrimary.copy(alpha = 0.5f))
                 ) {
                     Column(
@@ -1026,7 +1038,8 @@ fun TwoDRealtimeLiveDialog(
                             fontSize = 68.sp,
                             fontWeight = FontWeight.Black,
                             fontFamily = FontFamily.Monospace,
-                            color = Color.White
+                            color = CobaltPrimary,
+                            letterSpacing = 2.sp
                         )
 
                         Spacer(Modifier.height(4.dp))
@@ -1038,14 +1051,14 @@ fun TwoDRealtimeLiveDialog(
                             Icon(
                                 Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF10B981),
+                                tint = Color(0xFF16A34A),
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Updated: $currentTimeStr",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFFE2E8F0)
+                                color = Color(0xFF475569)
                             )
                         }
                     }
